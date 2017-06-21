@@ -14,7 +14,8 @@
     ]
   },
   "files": [
-    "scripts/flowbox.ts"
+    "scripts/flowbox.ts",
+    "scripts/default.ts"
   ],
   "compileOnSave": true
 }

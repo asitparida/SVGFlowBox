@@ -1,21 +1,121 @@
 ﻿<!DOCTYPE html>
 <html>
+
 <head>
     <title></title>
-	<meta charset="utf-8" />
+    <meta charset="utf-8" />
     <script src="node_modules/d3/build/d3.min.js"></script>
     <script src="dist/flowbox.js"></script>
+    <script src="dist/default.js"></script>
     <style>
-    #container {
-        border: 1px dotted #000;
-        box-sizing: border-box;
-        overflow-y: hidden;
-        overflow-x: auto;
-    }
+        #container{
+            display: block;
+            margin: 10vh auto;
+            background: rgb(250, 250, 250);
+        }
+        .flow-box-container {
+            border: 1px dotted #000;
+            box-sizing: border-box;
+            overflow-y: hidden;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .flow-box-event-container {
+            position: absolute;
+            width: 120px;
+            min-height: 120px;
+            background: transparent;
+            padding: 0;
+            box-sizing: border-box;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        .top-side-arrow {
+            top: 100%;
+            left: 50%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-color: rgba(0, 0, 0, 0);
+            border-top-color: #000;
+            border-width: 7px;
+            margin-left: -7px;
+        }
+
+        .bottom-side-arrow {
+            bottom: 100%;
+            left: 50%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-color: rgba(0, 0, 0, 0);
+            border-bottom-color:  #000;
+            border-width: 7px;
+            margin-left: -7px;
+        }
+
+        .right-side-arrow {
+            right: 100%;
+            top: 50%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-color: rgba(0, 0, 0, 0);
+            border-right-color: rgba(109, 193, 255, 0.50);
+            border-width: 7px;
+            margin-left: -7px;
+        }
+
+        .flow-box-event-img {
+            max-width: 50px;
+            max-height: 50px;
+            display: block;
+            margin: 5px auto;
+        }
+
+        .flow-box-event-text {
+            margin: 0;
+            font-size: small;
+            text-align: center;
+            padding: 5px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .flow-box-event-text p{
+            margin: 0;
+            padding:0;
+        }
+
+        .btn {
+            display: block;
+            margin: 0 auto;
+            margin: 0 0 0 0;
+            text-align: center;
+            position: fixed;
+            top:0;
+            left: 0;
+        }
+        body {
+            margin: 0;  
+        }
     </style>
 </head>
+
 <body>
-    <button class="btn" id="addBtn">Add Anchors</button>
     <div id="container"></div>
+    <button class="btn" id="addBtn">Add Anchors</button>
 </body>
+
 </html>
