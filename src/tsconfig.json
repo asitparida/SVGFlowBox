@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "sourceMap": true,
+    "target": "es5",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "module":"umd",
+    "types": [
+      "d3",
+      "jquery"
+    ]
+  },
+  "files": [
+    "scripts/flowbox.ts"
+  ],
+  "compileOnSave": true
+}
