@@ -5,8 +5,9 @@
 	<meta charset="utf-8" />
     <script src="node_modules/d3/build/d3.min.js"></script>
     <script src="dist/flowbox.js"></script>
+    <script src="dist/default4.js"></script>
     <style>
-    #container {
+    .flow-box-container {
         border: 1px dotted #000;
         box-sizing: border-box;
         overflow-y: hidden;
@@ -15,24 +16,30 @@
     }
     .flow-box-event-container {
         position: absolute;
-        width: 200px;
+        width: 120px;
         height: 100px;
     }
     .flow-box-event-img{
-        max-width: 80px;
-        max-height: 80px;
+        max-width: 60px;
+        max-height: 60px;
         display: block;
         margin: 0 auto;
     }
     .flow-box-event-text{
-        margin-top: 10px;
+        margin-top: 5px;
         font-size: small;
+        text-align: center;
+    }
+    .btn {
+        display: block;
+        margin: 0 auto;
+        margin: 45px 0 0 0;
         text-align: center;
     }
     </style>
 </head>
 <body>
-    <button class="btn" id="addBtn">Add Anchors</button>
     <div id="container"></div>
+    <button class="btn" id="addBtn">Add Anchors</button>
 </body>
 </html>

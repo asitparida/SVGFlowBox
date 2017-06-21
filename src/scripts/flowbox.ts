@@ -1,9 +1,10 @@
 ﻿/// <reference path="../node_modules/@types/d3/index.d.ts" />
 
 const DEFAULTS: any = {
-    DefaultAnchorNodeSpacing: 300,
+    DefaultAnchorNodeSpacing: 50,
     DefaultCurveStroke: '#6dc1ff',
-    ShowPlanarMid: false
+    ShowPlanarMid: false,
+    ShowCurveAnchors: false
 }
 
 class FlowBox {
@@ -19,9 +20,12 @@ class FlowBox {
     private lastAnchorAtLength: any = null;
     private curveAnchors: any = [];
     private lastCurveAnchor: any = null;
+    private lastAnchor: any;
+    private lastAnchorAlignedLeft: any;
     constructor(_container: d3.Selection<any, any, null, undefined>) {
         const self = this;
         self.container = _container;
+        self.container.node().classList.add('flow-box-container');
         let _width = (self.container.node().getBoundingClientRect() as ClientRect).width;
         self.containerWidth = _width;
         let _height = window.innerHeight;
@@ -41,16 +45,20 @@ class FlowBox {
     extendPlanarCurve() {
         const self = this;
         if (self.lastCurveAnchor == null) {
-            self.curveAnchors.push([0, self.planarY]);
-            self.lastCurveAnchor = [0, self.planarY];
+            self.curveAnchors.push([0, self.planarY + 100]);
+            self.lastCurveAnchor = [0, self.planarY + 100];
         }
         let x, y;
-        let heightDiffer = self.containerHeight / 4;
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY - heightDiffer);
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY + heightDiffer);
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY - heightDiffer);
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY + heightDiffer);
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY);
+        let heightDiffer = self.containerHeight / 5;
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY - (heightDiffer * 2));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 50, self.planarY + (heightDiffer * 1.5));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY + (heightDiffer * 1.70));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1.5));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1.70));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 50, self.planarY + (heightDiffer));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 150, self.planarY + (heightDiffer * 1.50));
+        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY);
         self.drawPlanarCurve();
     }
     insertIntoCurveAnchor(x: number, y: number) {
@@ -63,11 +71,16 @@ class FlowBox {
         self.curveAnchors.forEach((_point: any) => {
             self.containerWidth = self.containerWidth > _point[0] ? self.containerWidth : _point[0];
             self.svg.attr('width', self.containerWidth);
+            DEFAULTS.ShowCurveAnchors && self.svg.append('circle')
+                .attr('cx', _point[0])
+                .attr('cy', _point[1])
+                .attr('r', 5)
+                .attr('fill', '#000');
         });
         self.curve && self.curve.remove();
         self.curve = self.svg.append('path')
             .data([self.curveAnchors])
-            .attr('d', d3.line().curve(d3.curveCardinal))
+            .attr('d', d3.line().curve(d3.curveBasis))
             .attr('stroke-width', 2)
             .attr('stroke', DEFAULTS.DefaultCurveStroke)
             .attr('fill', 'none')
@@ -84,17 +97,30 @@ class FlowBox {
     }
     addAnchor() {
         const self = this;
+        let planarExtended = false;
         let _totalPathLength = self.curve.node().getTotalLength();
         if (!self.lastAnchorAtLength) {
             self.lastAnchorAtLength = 0;
-            self.lastAnchorAtLength = self.lastAnchorAtLength + DEFAULTS.DefaultAnchorNodeSpacing / 3;
+            self.lastAnchor = { 'x': -50, 'y': 0 };
+            self.lastAnchorAtLength = self.lastAnchorAtLength + 100;
         } else {
+            self.lastAnchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
             self.lastAnchorAtLength = self.lastAnchorAtLength + DEFAULTS.DefaultAnchorNodeSpacing;
         }
-        if (self.lastAnchorAtLength > _totalPathLength) {
-            self.extendPlanarCurve();
+        let _anchor;
+        _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+        // MAKE SURE HORIZONTAL DIFF TO LAST ANCHOR IS AT LEAST 100
+        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < 50) {
+            let diffToCompare = self.lastAnchorAlignedLeft ? 170 : 100;
+            while (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare) {
+                self.lastAnchorAtLength = self.lastAnchorAtLength + 25;
+                if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
+                    self.extendPlanarCurve();
+                    planarExtended = true;
+                }
+                _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+            }
         }
-        let _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
         if (_anchor) {
             self.svg.append('circle')
                 .attr('cx', _anchor['x'])
@@ -109,31 +135,32 @@ class FlowBox {
                 .attr('stroke', '#0073C6')
                 .attr('fill', 'none');
             self.anchors.push(_anchor);
+            let _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
+            let slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
+            let top, left;
+            if (Math.abs(slope) < 1) {
+                top = (slope < 0 ? _anchor['y'] - 130 : _anchor['y'] + 20);
+                if ((top + 120 > self.containerHeight) || (top < 0)) {
+                    top = (slope < 0 ? _anchor['y'] + 20 : _anchor['y'] - 130);
+                }
+                // LEFT ADJUSTED BY HALF OF BOX WITH
+                left = (_anchor['x'] - 60);
+                self.lastAnchorAlignedLeft = false;
+            } else {
+                top = (_anchor['y'] - 100);
+                left = (_anchor['x'] + 10);
+                self.lastAnchorAlignedLeft = true;
+            }
             let eventBox: d3.Selection<any, any, null, undefined> = self.container.append('div');
             eventBox.node().classList.add('flow-box-event-container');
-            eventBox.node().style.top = (_anchor['y'] > self.planarY ? _anchor['y'] - 150 : _anchor['y'] + 20) + 'px';
-            eventBox.node().style.left = (_anchor['x'] - 100) + 'px';
+            eventBox.node().style.top = top + 'px';
+            eventBox.node().style.left = left + 'px';
             let imgBox: d3.Selection<any, any, null, undefined> = eventBox.append('img');
             imgBox.node().classList.add('flow-box-event-img');
             imgBox.node().src = 'icons-roller-coaster.png';
             let textBox: d3.Selection<any, any, null, undefined> = eventBox.append('p');
             textBox.node().classList.add('flow-box-event-text');
-            textBox.node().innerHTML  = 'Lorem Ipsum Dolor Sit Amet Sit Dolor Ipsum Lorem';
+            textBox.node().innerHTML = 'Lorem Ipsum Dolor Sit Amet Sit Dolor Ipsum Lorem';
         }
     }
 }
-document.addEventListener('DOMContentLoaded', () => {
-    let _containerElm = document.getElementById('container');
-    _containerElm.style.display = 'BLOCK';
-    _containerElm.style.overflowY = 'hidden';
-    _containerElm.style.height = '100%';
-    _containerElm.style.width = '100%';
-    let _container = d3.select('#' + 'container');
-    let _box = new FlowBox(_container);
-    let _btn = document.getElementById('addBtn');
-    if (_btn) {
-        _btn.addEventListener('click', function () {
-            _box.addAnchor();
-        })
-    }
-});
