@@ -2,12 +2,14 @@
 
 const FLOW_DEFAULTS: any = {
     DefaultAnchorNodeSpacing: 50,
-    DefaultCurveStroke: '#6dc1ff',
+    DefaultCurveColor: '#6dc1ff',
     ShowPlanarMid: false,
     ShowCurveAnchors: false,
     DefaultNodeColor: '#007c6',
     DefaultContainerHeightFraction: 1,
-    ShowEventBoxes: true
+    ShowEventBoxes: true,
+    DefaultCurveIsSolid: false,
+    DefaultCuveStrokeDasharray: '2, 2'
 }
 
 class FlowBoxNode {
@@ -109,7 +111,8 @@ class FlowBox {
             .data([self.curveAnchors])
             .attr('d', d3.line().curve(d3.curveBasis))
             .attr('stroke-width', 2)
-            .attr('stroke', self.DEFAULTS.DefaultCurveStroke)
+            .attr('stroke', self.DEFAULTS.DefaultCurveColor)
+            .attr('stroke-dasharray', self.DEFAULTS.DefaultCurveIsSolid === true ? '0, 0' : self.DEFAULTS.DefaultCuveStrokeDasharray)
             .attr('fill', 'none')
     }
     drawPlanarMidLine() {

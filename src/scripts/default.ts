@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let _containerId = 'container';
     let defs = Object.create(FLOW_DEFAULTS);
     defs.DefaultContainerHeightFraction = 1;
+    defs.DefaultCurveColor = '#aae4ff';
     defs.ShowEventBoxes = true;
     let _box = new FlowBox(defs , _containerId, getNodes());
     let _btn = document.getElementById('addBtn');
