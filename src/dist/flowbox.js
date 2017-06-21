@@ -1,24 +1,44 @@
 /// <reference path="../node_modules/@types/d3/index.d.ts" />
-var DEFAULTS = {
+var FLOW_DEFAULTS = {
     DefaultAnchorNodeSpacing: 50,
     DefaultCurveStroke: '#6dc1ff',
     ShowPlanarMid: false,
-    ShowCurveAnchors: false
+    ShowCurveAnchors: false,
+    DefaultNodeColor: '#007c6',
+    DefaultContainerHeightFraction: 1,
+    ShowEventBoxes: true
 };
+var FlowBoxNode = (function () {
+    function FlowBoxNode(lower, upper, color) {
+        if (lower === void 0) { lower = ''; }
+        if (upper === void 0) { upper = ''; }
+        if (color === void 0) { color = FLOW_DEFAULTS.DefaultNodeColor; }
+        this.lower = lower;
+        this.upper = upper;
+        this.nodeColor = color;
+    }
+    return FlowBoxNode;
+}());
 var FlowBox = (function () {
-    function FlowBox(_container) {
+    function FlowBox(defaults, _containerId, nodes) {
         this.anchors = [];
         this.lastAnchorAtLength = null;
         this.curveAnchors = [];
         this.lastCurveAnchor = null;
         var self = this;
-        self.container = _container;
+        self.DEFAULTS = defaults;
+        self.container = d3.select(document.getElementById(_containerId));
         self.container.node().classList.add('flow-box-container');
         var _width = self.container.node().getBoundingClientRect().width;
         self.containerWidth = _width;
         var _height = window.innerHeight;
-        self.containerHeight = _height * 0.66;
-        self.container.node().style.height = self.containerHeight + 'px';
+        if (self.DEFAULTS.DefaultContainerHeightFraction !== 1) {
+            self.containerHeight = _height * self.DEFAULTS.DefaultContainerHeightFraction;
+            self.container.node().style.height = self.containerHeight + 'px';
+        }
+        else {
+            self.containerHeight = self.container.node().getBoundingClientRect().height;
+        }
         self.planarY = self.containerHeight * 0.50;
         setTimeout(function () {
             self.svg = self.container.append('svg')
@@ -26,10 +46,17 @@ var FlowBox = (function () {
                 .attr('height', self.containerHeight);
             setTimeout(function () {
                 self.extendPlanarCurve();
-                DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
+                self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
+                nodes.length > 0 && self.initNodes(nodes);
             });
         });
     }
+    FlowBox.prototype.initNodes = function (nodes) {
+        var self = this;
+        nodes.forEach(function (node) {
+            self.addAnchor(node);
+        });
+    };
     FlowBox.prototype.extendPlanarCurve = function () {
         var self = this;
         if (self.lastCurveAnchor == null) {
@@ -59,7 +86,7 @@ var FlowBox = (function () {
         self.curveAnchors.forEach(function (_point) {
             self.containerWidth = self.containerWidth > _point[0] ? self.containerWidth : _point[0];
             self.svg.attr('width', self.containerWidth);
-            DEFAULTS.ShowCurveAnchors && self.svg.append('circle')
+            self.DEFAULTS.ShowCurveAnchors && self.svg.append('circle')
                 .attr('cx', _point[0])
                 .attr('cy', _point[1])
                 .attr('r', 5)
@@ -70,7 +97,7 @@ var FlowBox = (function () {
             .data([self.curveAnchors])
             .attr('d', d3.line().curve(d3.curveBasis))
             .attr('stroke-width', 2)
-            .attr('stroke', DEFAULTS.DefaultCurveStroke)
+            .attr('stroke', self.DEFAULTS.DefaultCurveStroke)
             .attr('fill', 'none');
     };
     FlowBox.prototype.drawPlanarMidLine = function () {
@@ -83,7 +110,7 @@ var FlowBox = (function () {
             .attr('stroke-width', 1)
             .attr('stroke', '#e74c3c');
     };
-    FlowBox.prototype.addAnchor = function () {
+    FlowBox.prototype.addAnchor = function (node) {
         var self = this;
         var planarExtended = false;
         var _totalPathLength = self.curve.node().getTotalLength();
@@ -94,13 +121,13 @@ var FlowBox = (function () {
         }
         else {
             self.lastAnchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
-            self.lastAnchorAtLength = self.lastAnchorAtLength + DEFAULTS.DefaultAnchorNodeSpacing;
+            self.lastAnchorAtLength = self.lastAnchorAtLength + self.DEFAULTS.DefaultAnchorNodeSpacing;
         }
         var _anchor;
         _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
         // MAKE SURE HORIZONTAL DIFF TO LAST ANCHOR IS AT LEAST 100
-        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < 50) {
-            var diffToCompare = self.lastAnchorAlignedLeft ? 170 : 100;
+        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < 100) {
+            var diffToCompare = self.lastAnchorAlignedLeft ? 220 : 130;
             while (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare) {
                 self.lastAnchorAtLength = self.lastAnchorAtLength + 25;
                 if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
@@ -115,43 +142,96 @@ var FlowBox = (function () {
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 5)
-                .attr('fill', '#0073C6');
+                .attr('fill', node.nodeColor);
             self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 10)
                 .attr('stroke-width', 3)
-                .attr('stroke', '#0073C6')
+                .attr('stroke', node.nodeColor)
                 .attr('fill', 'none');
             self.anchors.push(_anchor);
             var _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
             var slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
             var top_1, left = void 0;
+            var position = '';
             if (Math.abs(slope) < 1) {
-                top_1 = (slope < 0 ? _anchor['y'] - 130 : _anchor['y'] + 20);
+                var topOffset = self.DEFAULTS.ShowEventBoxes ? 145 : 130;
+                var bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
+                top_1 = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
+                position = slope < 0 ? 'top' : 'bottom';
                 if ((top_1 + 120 > self.containerHeight) || (top_1 < 0)) {
-                    top_1 = (slope < 0 ? _anchor['y'] + 20 : _anchor['y'] - 130);
+                    top_1 = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
+                    position = slope < 0 ? 'bottom' : 'top';
                 }
                 // LEFT ADJUSTED BY HALF OF BOX WITH
                 left = (_anchor['x'] - 60);
                 self.lastAnchorAlignedLeft = false;
             }
             else {
-                top_1 = (_anchor['y'] - 100);
-                left = (_anchor['x'] + 10);
+                var leftOffset = self.DEFAULTS.ShowEventBoxes ? 30 : 15;
+                top_1 = (_anchor['y'] - 70);
+                left = (_anchor['x'] + leftOffset);
                 self.lastAnchorAlignedLeft = true;
+                position = 'right';
             }
             var eventBox = self.container.append('div');
             eventBox.node().classList.add('flow-box-event-container');
             eventBox.node().style.top = top_1 + 'px';
             eventBox.node().style.left = left + 'px';
-            var imgBox = eventBox.append('img');
-            imgBox.node().classList.add('flow-box-event-img');
-            imgBox.node().src = 'icons-roller-coaster.png';
-            var textBox = eventBox.append('p');
+            var imgBox = eventBox.append('div');
+            imgBox.node().innerHTML = node.upper;
+            var textBox = eventBox.append('div');
             textBox.node().classList.add('flow-box-event-text');
-            textBox.node().innerHTML = 'Lorem Ipsum Dolor Sit Amet Sit Dolor Ipsum Lorem';
+            textBox.node().innerHTML = node.lower;
+            if (self.DEFAULTS.ShowEventBoxes) {
+                var arrowInBox = eventBox.append('div');
+                eventBox.attr('data-color', node.nodeColor);
+                eventBox.node().style.background = LightenDarkenColor(node.nodeColor, 120);
+                eventBox.node().style.borderColor = node.nodeColor;
+                arrowInBox.node().classList.add(position + '-side-arrow');
+                if (position === 'top')
+                    arrowInBox.node().style.borderTopColor = node.nodeColor;
+                else if (position === 'bottom')
+                    arrowInBox.node().style.borderBottomColor = node.nodeColor;
+                else if (position === 'right')
+                    arrowInBox.node().style.borderRightColor = node.nodeColor;
+                textBox.node().style.background = node.nodeColor;
+                textBox.node().style.color = '#FFF';
+            }
         }
     };
     return FlowBox;
 }());
+function LightenDarkenColor(col, amt) {
+    var usePound = false;
+    if (col[0] == "#") {
+        col = col.slice(1);
+        usePound = true;
+    }
+    var num = parseInt(col, 16);
+    var r = (num >> 16) + amt;
+    if (r > 255)
+        r = 255;
+    else if (r < 0)
+        r = 0;
+    var b = ((num >> 8) & 0x00FF) + amt;
+    if (b > 255)
+        b = 255;
+    else if (b < 0)
+        b = 0;
+    var g = (num & 0x0000FF) + amt;
+    if (g > 255)
+        g = 255;
+    else if (g < 0)
+        g = 0;
+    return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
+}
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
