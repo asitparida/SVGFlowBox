@@ -12,7 +12,7 @@ const FLOW_DEFAULTS: any = {
     DefaultCuveStrokeDasharray: '2, 2'
 }
 
-class FlowBoxNode {
+class FlowBoxNode {    
     lower: string;
     upper: string;
     nodeColor: string;
@@ -21,6 +21,17 @@ class FlowBoxNode {
         this.upper = upper;
         this.nodeColor = color;
     }
+}
+
+class FlowAnchor {
+    anchor: any;
+    data: any;
+    innerNode: d3.Selection<any, any, null, undefined>;
+    outerNode: d3.Selection<any, any, null, undefined>;
+    eventBoxPosition: string;
+    eventBox: d3.Selection<any, any, null, undefined>;
+    upperBox: d3.Selection<any, any, null, undefined>;
+    lowerBox: d3.Selection<any, any, null, undefined>;
 }
 
 class FlowBox {
@@ -59,11 +70,16 @@ class FlowBox {
                 .attr('width', _width)
                 .attr('height', self.containerHeight);
             setTimeout(() => {
-                self.extendPlanarCurve();
-                self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
-                nodes.length > 0 && self.initNodes(nodes);
+                self.initialize(nodes);
             });
         })
+    }
+    initialize(nodes: FlowBoxNode[]) {
+        const self = this;
+        self.svg.empty();
+        self.extendPlanarCurve();
+        self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
+        self.initNodes(nodes);
     }
     initNodes(nodes: FlowBoxNode[]) {
         const self = this;
@@ -127,6 +143,8 @@ class FlowBox {
     }
     addAnchor(node: FlowBoxNode) {
         const self = this;
+        let _flowAnchor = new FlowAnchor();
+        _flowAnchor.data = node;
         let planarExtended = false;
         let _totalPathLength = self.curve.node().getTotalLength();
         if (!self.lastAnchorAtLength) {
@@ -152,19 +170,19 @@ class FlowBox {
             }
         }
         if (_anchor) {
-            self.svg.append('circle')
+            _flowAnchor.anchor = _anchor;
+            _flowAnchor.innerNode =  self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 5)
                 .attr('fill', node.nodeColor);
-            self.svg.append('circle')
+            _flowAnchor.outerNode = self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 10)
                 .attr('stroke-width', 3)
                 .attr('stroke', node.nodeColor)
-                .attr('fill', 'none');
-            self.anchors.push(_anchor);
+                .attr('fill', 'none');            
             let _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
             let slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
             let top, left;
@@ -188,21 +206,22 @@ class FlowBox {
                 self.lastAnchorAlignedLeft = true;
                 position = 'right';
             }
-            let eventBox: d3.Selection<any, any, null, undefined> = self.container.append('div');
-            eventBox.node().classList.add('flow-box-event-container');
-            eventBox.node().style.top = top + 'px';
-            eventBox.node().style.left = left + 'px';
-            let imgBox: d3.Selection<any, any, null, undefined> = eventBox.append('div');
-            imgBox.node().innerHTML = node.upper;
-            let textBox: d3.Selection<any, any, null, undefined> = eventBox.append('div');
-            textBox.node().classList.add('flow-box-event-text');
-            textBox.node().innerHTML = node.lower;
+            _flowAnchor.eventBoxPosition = position;
+            _flowAnchor.eventBox = self.container.append('div');
+            _flowAnchor.eventBox.node().classList.add('flow-box-event-container');
+            _flowAnchor.eventBox.node().style.top = top + 'px';
+            _flowAnchor.eventBox.node().style.left = left + 'px';
+            _flowAnchor.upperBox = _flowAnchor.eventBox.append('div');
+            _flowAnchor.upperBox.node().innerHTML = node.upper;
+            _flowAnchor.lowerBox = _flowAnchor.eventBox.append('div');
+            _flowAnchor.lowerBox.node().classList.add('flow-box-event-text');
+            _flowAnchor.lowerBox.node().innerHTML = node.lower;
 
             if (self.DEFAULTS.ShowEventBoxes) {
-                let arrowInBox: d3.Selection<any, any, null, undefined> = eventBox.append('div');
-                eventBox.attr('data-color', node.nodeColor);
-                eventBox.node().style.background = LightenDarkenColor(node.nodeColor, 120);
-                eventBox.node().style.borderColor = node.nodeColor;
+                let arrowInBox: d3.Selection<any, any, null, undefined> = _flowAnchor.eventBox.append('div');
+                _flowAnchor.eventBox.attr('data-color', node.nodeColor);
+                _flowAnchor.eventBox.node().style.background = LightenDarkenColor(node.nodeColor, 120);
+                _flowAnchor.eventBox.node().style.borderColor = node.nodeColor;
                 arrowInBox.node().classList.add(position + '-side-arrow');
                 if (position === 'top')
                     arrowInBox.node().style.borderTopColor = node.nodeColor;
@@ -210,10 +229,29 @@ class FlowBox {
                     arrowInBox.node().style.borderBottomColor = node.nodeColor;
                 else if (position === 'right')
                     arrowInBox.node().style.borderRightColor = node.nodeColor;
-                textBox.node().style.background = node.nodeColor;
-                textBox.node().style.color = '#FFF';
+                _flowAnchor.lowerBox.node().style.background = node.nodeColor;
+                _flowAnchor.lowerBox.node().style.color = '#FFF';
             }
+            self.anchors.push(_flowAnchor);
         }
+    }
+    reset() {
+        console.log('reset');
+        const self = this;
+        self.lastAnchorAtLength = null;
+        self.anchors.forEach((anchor: FlowAnchor) =>{
+            anchor.innerNode.remove();
+            anchor.outerNode.remove();            
+            anchor.lowerBox.remove();
+            anchor.upperBox.remove();
+            anchor.eventBox.remove();
+        });
+        self.anchors = [];
+        self.initialize([]);
+    }
+    getNodes(): any[] {
+        const self = this;
+        return self.anchors.map((anchor: FlowAnchor) =>{ return anchor.data});
     }
 }
 
@@ -223,17 +261,17 @@ function LightenDarkenColor(col: any, amt: any) {
         col = col.slice(1);
         usePound = true;
     }
-    var num = parseInt(col,16);
+    var num = parseInt(col, 16);
     var r = (num >> 16) + amt;
     if (r > 255) r = 255;
-    else if  (r < 0) r = 0;
-    var b = ((num >> 8) & 0x00FF) + amt; 
+    else if (r < 0) r = 0;
+    var b = ((num >> 8) & 0x00FF) + amt;
     if (b > 255) b = 255;
-    else if  (b < 0) b = 0;
-    var g = (num & 0x0000FF) + amt; 
+    else if (b < 0) b = 0;
+    var g = (num & 0x0000FF) + amt;
     if (g > 255) g = 255;
     else if (g < 0) g = 0;
-    return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);  
+    return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16);
 }
 
 
