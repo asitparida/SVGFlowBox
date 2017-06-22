@@ -5,6 +5,7 @@ Click here to learn more. http://go.microsoft.com/fwlink/?LinkId=518007
 */
 
 var gulp = require('gulp');
+var uglify = require('gulp-uglify');
 var del = require('del');
 var ts = require("gulp-typescript");
 var tsProject = ts.createProject("tsconfig.json");
@@ -20,7 +21,9 @@ gulp.task('clean', function () {
 gulp.task('tscomp', function(){
     return tsProject.src()
         .pipe(tsProject())
-        .js.pipe(gulp.dest("dist"));
+        .js
+        .pipe(uglify())
+        .pipe(gulp.dest("dist"));
 });
 
 gulp.task('default', function () {
