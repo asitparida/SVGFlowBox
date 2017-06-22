@@ -21,6 +21,11 @@ var FlowBoxNode = (function () {
     }
     return FlowBoxNode;
 }());
+var FlowAnchor = (function () {
+    function FlowAnchor() {
+    }
+    return FlowAnchor;
+}());
 var FlowBox = (function () {
     function FlowBox(defaults, _containerId, nodes) {
         this.anchors = [];
@@ -47,12 +52,17 @@ var FlowBox = (function () {
                 .attr('width', _width)
                 .attr('height', self.containerHeight);
             setTimeout(function () {
-                self.extendPlanarCurve();
-                self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
-                nodes.length > 0 && self.initNodes(nodes);
+                self.initialize(nodes);
             });
         });
     }
+    FlowBox.prototype.initialize = function (nodes) {
+        var self = this;
+        self.svg.empty();
+        self.extendPlanarCurve();
+        self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
+        self.initNodes(nodes);
+    };
     FlowBox.prototype.initNodes = function (nodes) {
         var self = this;
         nodes.forEach(function (node) {
@@ -115,6 +125,8 @@ var FlowBox = (function () {
     };
     FlowBox.prototype.addAnchor = function (node) {
         var self = this;
+        var _flowAnchor = new FlowAnchor();
+        _flowAnchor.data = node;
         var planarExtended = false;
         var _totalPathLength = self.curve.node().getTotalLength();
         if (!self.lastAnchorAtLength) {
@@ -141,19 +153,19 @@ var FlowBox = (function () {
             }
         }
         if (_anchor) {
-            self.svg.append('circle')
+            _flowAnchor.anchor = _anchor;
+            _flowAnchor.innerNode = self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 5)
                 .attr('fill', node.nodeColor);
-            self.svg.append('circle')
+            _flowAnchor.outerNode = self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 10)
                 .attr('stroke-width', 3)
                 .attr('stroke', node.nodeColor)
                 .attr('fill', 'none');
-            self.anchors.push(_anchor);
             var _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
             var slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
             var top_1, left = void 0;
@@ -178,20 +190,21 @@ var FlowBox = (function () {
                 self.lastAnchorAlignedLeft = true;
                 position = 'right';
             }
-            var eventBox = self.container.append('div');
-            eventBox.node().classList.add('flow-box-event-container');
-            eventBox.node().style.top = top_1 + 'px';
-            eventBox.node().style.left = left + 'px';
-            var imgBox = eventBox.append('div');
-            imgBox.node().innerHTML = node.upper;
-            var textBox = eventBox.append('div');
-            textBox.node().classList.add('flow-box-event-text');
-            textBox.node().innerHTML = node.lower;
+            _flowAnchor.eventBoxPosition = position;
+            _flowAnchor.eventBox = self.container.append('div');
+            _flowAnchor.eventBox.node().classList.add('flow-box-event-container');
+            _flowAnchor.eventBox.node().style.top = top_1 + 'px';
+            _flowAnchor.eventBox.node().style.left = left + 'px';
+            _flowAnchor.upperBox = _flowAnchor.eventBox.append('div');
+            _flowAnchor.upperBox.node().innerHTML = node.upper;
+            _flowAnchor.lowerBox = _flowAnchor.eventBox.append('div');
+            _flowAnchor.lowerBox.node().classList.add('flow-box-event-text');
+            _flowAnchor.lowerBox.node().innerHTML = node.lower;
             if (self.DEFAULTS.ShowEventBoxes) {
-                var arrowInBox = eventBox.append('div');
-                eventBox.attr('data-color', node.nodeColor);
-                eventBox.node().style.background = LightenDarkenColor(node.nodeColor, 120);
-                eventBox.node().style.borderColor = node.nodeColor;
+                var arrowInBox = _flowAnchor.eventBox.append('div');
+                _flowAnchor.eventBox.attr('data-color', node.nodeColor);
+                _flowAnchor.eventBox.node().style.background = LightenDarkenColor(node.nodeColor, 120);
+                _flowAnchor.eventBox.node().style.borderColor = node.nodeColor;
                 arrowInBox.node().classList.add(position + '-side-arrow');
                 if (position === 'top')
                     arrowInBox.node().style.borderTopColor = node.nodeColor;
@@ -199,10 +212,29 @@ var FlowBox = (function () {
                     arrowInBox.node().style.borderBottomColor = node.nodeColor;
                 else if (position === 'right')
                     arrowInBox.node().style.borderRightColor = node.nodeColor;
-                textBox.node().style.background = node.nodeColor;
-                textBox.node().style.color = '#FFF';
+                _flowAnchor.lowerBox.node().style.background = node.nodeColor;
+                _flowAnchor.lowerBox.node().style.color = '#FFF';
             }
+            self.anchors.push(_flowAnchor);
         }
+    };
+    FlowBox.prototype.reset = function () {
+        console.log('reset');
+        var self = this;
+        self.lastAnchorAtLength = null;
+        self.anchors.forEach(function (anchor) {
+            anchor.innerNode.remove();
+            anchor.outerNode.remove();
+            anchor.lowerBox.remove();
+            anchor.upperBox.remove();
+            anchor.eventBox.remove();
+        });
+        self.anchors = [];
+        self.initialize([]);
+    };
+    FlowBox.prototype.getNodes = function () {
+        var self = this;
+        return self.anchors.map(function (anchor) { return anchor.data; });
     };
     return FlowBox;
 }());

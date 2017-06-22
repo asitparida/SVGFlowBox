@@ -1,20 +1,22 @@
 ﻿<!DOCTYPE html>
-<html>
+<html ng-csp ng-app="SampleApp">
 
 <head>
     <title></title>
     <meta charset="utf-8" />
-    <script src="dist/d3.min.js"></script>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/4.1.0/css/fabric.min.css">
+    <script src="lib/d3.min.js"></script>
+    <script src="lib/angular.min.js"></script>
     <script src="dist/flowbox.js"></script>
-    <script src="dist/default.js"></script>
+    <!--<script src="dist/default.js"></script>-->
+    <script src="app.js"></script>
     <style>
         #container{
             display: block;
             margin: 10vh auto;
             background: rgb(250, 250, 250);
         }
-        .flow-box-container {
-            border: 1px dotted #000;
+        .flow-box-container {            
             box-sizing: border-box;
             overflow-y: hidden;
             overflow-x: auto;
@@ -110,12 +112,61 @@
         body {
             margin: 0;  
         }
+        .flow-box-holder{
+            float: right;
+            margin: 0;
+            width: calc(100% - 60px);
+            height:80vh;
+            overflow-y: hidden;
+            overflow-x: auto;
+        }
+        .flow-box-holder-outer{
+            width: 80%;
+            height: 80vh;
+            display: block;
+            margin: 10vh auto;
+            overflow-y: hidden;
+            overflow-x: auto;
+            border: 1px dotted #000;
+        }
+        .flow-box-actions{
+            height: 100%;
+            width: 60px;
+            float: left;
+            background: rgb(240, 240, 240);
+        }
+        .flow-box-actions-item{
+            height: 60px;
+            width:60px;
+            line-height: 60px;
+            text-align: center;
+            font-size: large;
+            cursor: pointer;
+            color: #909090;
+        }
+        .flow-box-actions-item:hover,
+        .flow-box-actions-item:focus{
+            color: #000;
+            background: rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 
-<body>
-    <div id="container"></div>
-    <button class="btn" id="addBtn">Add Anchors</button>
+<body ng-controller="SampleAppController as sample">
+    <div class="flow-box-holder-outer">
+        <div class="flow-box-actions">
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.addNode()" title="Add Anchor">
+                <i class="ms-Icon ms-Icon--OneDriveAdd"></i>
+            </div>            
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.download()" title="Add Anchor">
+                <i class="ms-Icon ms-Icon--Download"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.reset()" title="Add Anchor">
+                <i class="ms-Icon ms-Icon--Refresh"></i>
+            </div>            
+        </div>
+        <div class="flow-box-holder" ng-attr-id="{{sample.containerId}}"></div>
+    </div>    
 </body>
 
 </html>
