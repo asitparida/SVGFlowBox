@@ -1,4 +1,5 @@
 ﻿/// <reference path="../node_modules/@types/d3/index.d.ts" />
+/// <reference path="../node_modules/@types/jquery/index.d.ts" />
 
 const FLOW_DEFAULTS: any = {
     DefaultAnchorNodeSpacing: 50,
@@ -12,7 +13,7 @@ const FLOW_DEFAULTS: any = {
     DefaultCuveStrokeDasharray: '2, 2'
 }
 
-class FlowBoxNode {    
+class FlowBoxNode {
     lower: string;
     upper: string;
     nodeColor: string;
@@ -84,7 +85,7 @@ class FlowBox {
     initNodes(nodes: FlowBoxNode[]) {
         const self = this;
         nodes.forEach((node: FlowBoxNode) => {
-            self.addAnchor(node);
+            self.addAnchor(node, false);
         });
     }
     extendPlanarCurve() {
@@ -141,11 +142,12 @@ class FlowBox {
             .attr('stroke-width', 1)
             .attr('stroke', '#e74c3c');
     }
-    addAnchor(node: FlowBoxNode) {
+    addAnchor(node: FlowBoxNode, scroll: Boolean = true) {
         const self = this;
         let _flowAnchor = new FlowAnchor();
         _flowAnchor.data = node;
         let planarExtended = false;
+        let _left = 0;
         let _totalPathLength = self.curve.node().getTotalLength();
         if (!self.lastAnchorAtLength) {
             self.lastAnchorAtLength = 0;
@@ -171,7 +173,7 @@ class FlowBox {
         }
         if (_anchor) {
             _flowAnchor.anchor = _anchor;
-            _flowAnchor.innerNode =  self.svg.append('circle')
+            _flowAnchor.innerNode = self.svg.append('circle')
                 .attr('cx', _anchor['x'])
                 .attr('cy', _anchor['y'])
                 .attr('r', 5)
@@ -182,7 +184,7 @@ class FlowBox {
                 .attr('r', 10)
                 .attr('stroke-width', 3)
                 .attr('stroke', node.nodeColor)
-                .attr('fill', 'none');            
+                .attr('fill', 'none');
             let _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
             let slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
             let top, left;
@@ -209,6 +211,7 @@ class FlowBox {
             _flowAnchor.eventBoxPosition = position;
             _flowAnchor.eventBox = self.container.append('div');
             _flowAnchor.eventBox.node().classList.add('flow-box-event-container');
+            _flowAnchor.eventBox.attr('id', GUID() + '_EVB');
             _flowAnchor.eventBox.node().style.top = top + 'px';
             _flowAnchor.eventBox.node().style.left = left + 'px';
             _flowAnchor.upperBox = _flowAnchor.eventBox.append('div');
@@ -233,15 +236,19 @@ class FlowBox {
                 _flowAnchor.lowerBox.node().style.color = '#FFF';
             }
             self.anchors.push(_flowAnchor);
+            if (scroll) {
+                let _scrollPos = left - 150;
+                $(self.container.node()).animate({ scrollLeft: _scrollPos + 'px' }, 300);
+            }
         }
     }
     reset() {
         console.log('reset');
         const self = this;
         self.lastAnchorAtLength = null;
-        self.anchors.forEach((anchor: FlowAnchor) =>{
+        self.anchors.forEach((anchor: FlowAnchor) => {
             anchor.innerNode.remove();
-            anchor.outerNode.remove();            
+            anchor.outerNode.remove();
             anchor.lowerBox.remove();
             anchor.upperBox.remove();
             anchor.eventBox.remove();
@@ -251,7 +258,7 @@ class FlowBox {
     }
     getNodes(): any[] {
         const self = this;
-        return self.anchors.map((anchor: FlowAnchor) =>{ return anchor.data});
+        return self.anchors.map((anchor: FlowAnchor) => { return anchor.data });
     }
 }
 
@@ -282,4 +289,13 @@ function hexToRgb(hex: string) {
         g: parseInt(result[2], 16),
         b: parseInt(result[3], 16)
     } : null;
+}
+
+function GUID(): string {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+            .toString(16)
+            .substring(1);
+    }
+    return s4() + '-' + s4();
 }
