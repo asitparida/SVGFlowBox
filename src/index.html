@@ -164,8 +164,17 @@
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.download()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Download"></i>
             </div>
-            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.reset()" title="Add Anchor">
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.redraw()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Refresh"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.touchEdit()" title="Add Anchor">
+                <i class="ms-Icon ms-Icon--Touch"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.reset()" title="Add Anchor">
+                <i class="ms-Icon ms-Icon--Clear"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.downloadBaseAnchors()" title="Download BaseAnchors">
+                <i class="ms-Icon ms-Icon--Download"></i>
             </div>            
         </div>
         <div class="flow-box-holder" ng-attr-id="{{sample.containerId}}"></div>

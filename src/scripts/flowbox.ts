@@ -1,8 +1,24 @@
 ﻿/// <reference path="../node_modules/@types/d3/index.d.ts" />
 /// <reference path="../node_modules/@types/jquery/index.d.ts" />
 
-const FLOW_DEFAULTS: any = {
-    DefaultAnchorNodeSpacing: 50,
+interface IflowDefaults {
+    DefaultAnchorNodeSpacing: number,
+    DefaultCurveColor: string,
+    ShowPlanarMid: Boolean,
+    ShowCurveAnchors: Boolean,
+    DefaultNodeColor: string,
+    DefaultContainerHeightFraction: number,
+    ShowEventBoxes: Boolean,
+    DefaultCurveIsSolid: Boolean,
+    DefaultCuveStrokeDasharray: string,
+    TouchEditMode: Boolean,
+    EventBoxWidth: number,
+    EventBoxHeight: number,
+    BaseAnchors: Array<any>
+}
+
+const FLOW_DEFAULTS: IflowDefaults = {
+    DefaultAnchorNodeSpacing: 10,
     DefaultCurveColor: '#6dc1ff',
     ShowPlanarMid: false,
     ShowCurveAnchors: false,
@@ -10,7 +26,11 @@ const FLOW_DEFAULTS: any = {
     DefaultContainerHeightFraction: 1,
     ShowEventBoxes: true,
     DefaultCurveIsSolid: false,
-    DefaultCuveStrokeDasharray: '2, 2'
+    DefaultCuveStrokeDasharray: '2, 2',
+    TouchEditMode: false,
+    EventBoxHeight: 120,
+    EventBoxWidth: 180,
+    BaseAnchors: []
 }
 
 class FlowBoxNode {
@@ -35,6 +55,22 @@ class FlowAnchor {
     lowerBox: d3.Selection<any, any, null, undefined>;
 }
 
+class CurveAnchor {
+    index: number = -1;
+    anchorBase: AnchorBase;
+    data: any;
+    anchor: d3.Selection<any, any, null, undefined>;
+}
+
+class AnchorBase {
+    offsetX: number = 0;
+    offsetY: number = 0;
+    constructor(x: number, y: number) {
+        this.offsetX = x;
+        this.offsetY = y;
+    }
+}
+
 class FlowBox {
     private eventBoxContainer: any;
     private container: d3.Selection<any, any, null, undefined>;
@@ -44,15 +80,19 @@ class FlowBox {
     private planarY: number;
     private planarMidPath: d3.Selection<any, any, null, undefined>;
     private curve: d3.Selection<any, any, null, undefined>;
-    private anchors: any[] = [];
+    private anchors: FlowAnchor[] = [];
     private lastAnchorAtLength: any = null;
-    private curveAnchors: any = [];
+    private curveAnchors: CurveAnchor[] = [];
     private lastCurveAnchor: any = null;
     private lastAnchor: any;
     private lastAnchorAlignedLeft: any;
-    private DEFAULTS: any;
+    private DEFAULTS: IflowDefaults;
+    private captureMouseMove: any;
+    private activeCurveAnchor: CurveAnchor;
+    private baseAnchors: AnchorBase[];
     constructor(defaults: any, _containerId: string, nodes: FlowBoxNode[]) {
         const self = this;
+        self.baseAnchors = [];
         self.DEFAULTS = defaults;
         self.container = d3.select(document.getElementById(_containerId));
         self.container.node().classList.add('flow-box-container');
@@ -71,14 +111,23 @@ class FlowBox {
                 .attr('width', _width)
                 .attr('height', self.containerHeight);
             setTimeout(() => {
+                self.populateCurveAnchorBase();
+                self.extendPlanarCurve();
                 self.initialize(nodes);
             });
         })
     }
+    resetCurve() {
+        const self = this;
+        self.curveAnchors.forEach((anchor: CurveAnchor) => {
+            anchor.anchor.remove();
+        });
+        self.curveAnchors = [];
+        self.curve && self.curve.remove();
+    }
     initialize(nodes: FlowBoxNode[]) {
         const self = this;
         self.svg.empty();
-        self.extendPlanarCurve();
         self.DEFAULTS.ShowPlanarMid && self.drawPlanarMidLine();
         self.initNodes(nodes);
     }
@@ -88,44 +137,106 @@ class FlowBox {
             self.addAnchor(node, false);
         });
     }
+    getBaseAnchors(): any[] {
+        return this.DEFAULTS.BaseAnchors;
+    }
+    populateCurveAnchorBase() {
+        const self = this;
+        let heightDiffer = self.containerHeight / 5;
+        let extremeX = 0;
+        self.baseAnchors = [];
+        if (self.DEFAULTS.BaseAnchors && self.DEFAULTS.BaseAnchors.length > 0) {
+            self.DEFAULTS.BaseAnchors.push();
+        } else {
+            self.DEFAULTS.BaseAnchors.push([0, 100]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1]);
+            self.DEFAULTS.BaseAnchors.push([300, - heightDiffer * 2]);
+            self.DEFAULTS.BaseAnchors.push([50, heightDiffer * 1.5]);
+            self.DEFAULTS.BaseAnchors.push([200, heightDiffer * 1.70]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1.5]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1.70]);
+            self.DEFAULTS.BaseAnchors.push([50, heightDiffer * 1]);
+            self.DEFAULTS.BaseAnchors.push([150, heightDiffer * 1.50]);
+            self.DEFAULTS.BaseAnchors.push([200, 0]);
+        }
+        self.DEFAULTS.BaseAnchors.forEach((_anc) => {
+            self.baseAnchors.push(new AnchorBase(_anc[0], _anc[1]));
+        });
+    }
     extendPlanarCurve() {
         const self = this;
+        console.log(self.lastCurveAnchor);
         if (self.lastCurveAnchor == null) {
-            self.curveAnchors.push([0, self.planarY + 100]);
-            self.lastCurveAnchor = [0, self.planarY + 100];
+            self.lastCurveAnchor = [0, 0];
         }
-        let x, y;
-        let heightDiffer = self.containerHeight / 5;
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 300, self.planarY - (heightDiffer * 2));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 50, self.planarY + (heightDiffer * 1.5));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY + (heightDiffer * 1.70));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1.5));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY - (heightDiffer * 1.70));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 50, self.planarY + (heightDiffer));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 150, self.planarY + (heightDiffer * 1.50));
-        self.insertIntoCurveAnchor(self.lastCurveAnchor[0] + 200, self.planarY);
+        self.baseAnchors.forEach((base: AnchorBase, index: number) => {
+            self.creatCurveAnchor(index + 1, base);
+        });
         self.drawPlanarCurve();
     }
-    insertIntoCurveAnchor(x: number, y: number) {
+    creatCurveAnchor(index: number, base: AnchorBase) {
         const self = this;
-        self.curveAnchors.push([x, y]);
+        let curveAnchor = new CurveAnchor();
+        curveAnchor.index = index;
+        curveAnchor.anchorBase = base;
+        let x = self.lastCurveAnchor[0] + base.offsetX;
+        let y = self.planarY + base.offsetY;
+        curveAnchor.data = [x, y];
         self.lastCurveAnchor = [x, y];
+        self.curveAnchors.push(curveAnchor);
     }
     drawPlanarCurve() {
         const self = this;
-        self.curveAnchors.forEach((_point: any) => {
-            self.containerWidth = self.containerWidth > _point[0] ? self.containerWidth : _point[0];
+        let _lastBBRect: ClientRect = null;
+        self.captureMouseMove = false;
+        let captureMouseMoveFn = function (e: MouseEvent) {
+            if (self.activeCurveAnchor && _lastBBRect) {
+                let x = e.clientX - _lastBBRect.left;
+                let y = e.clientY - _lastBBRect.top;
+                self.activeCurveAnchor.anchor.attr('cx', x);
+                self.activeCurveAnchor.anchor.attr('cy', y);
+                let diff = x - self.activeCurveAnchor.data[0];
+                self.baseAnchors[self.activeCurveAnchor.index].offsetX = self.baseAnchors[self.activeCurveAnchor.index].offsetX + diff;
+                diff = y - self.activeCurveAnchor.data[1];
+                self.baseAnchors[self.activeCurveAnchor.index].offsetY = self.baseAnchors[self.activeCurveAnchor.index].offsetY + diff;
+            }
+        }
+        document.addEventListener('mouseup', () => {
+            if (self.captureMouseMove) {
+                self.resetCurve();
+                self.activeCurveAnchor = null;
+                _lastBBRect = null;
+                document.removeEventListener('mousemove', captureMouseMoveFn);
+                self.curveAnchors = [];
+                self.curve && self.curve.remove();
+                self.lastAnchorAtLength = null;
+                self.lastCurveAnchor = null;
+                self.extendPlanarCurve();
+                self.captureMouseMove = false;
+            }
+        })
+        self.curveAnchors.forEach((_curveAnchor: CurveAnchor) => {
+            self.containerWidth = self.containerWidth > _curveAnchor.data[0] ? self.containerWidth : _curveAnchor.data[0];
             self.svg.attr('width', self.containerWidth);
-            self.DEFAULTS.ShowCurveAnchors && self.svg.append('circle')
-                .attr('cx', _point[0])
-                .attr('cy', _point[1])
+            _curveAnchor.anchor = self.DEFAULTS.ShowCurveAnchors && self.svg.append('circle')
+                .attr('cx', _curveAnchor.data[0])
+                .attr('cy', _curveAnchor.data[1])
                 .attr('r', 5)
                 .attr('fill', '#000');
+            if (self.DEFAULTS.TouchEditMode) {
+                _curveAnchor.anchor.on('mousedown', (e) => {
+                    self.activeCurveAnchor = _curveAnchor;
+                    _lastBBRect = self.container.node().getBoundingClientRect();
+                    self.captureMouseMove = true;
+                    document.addEventListener('mousemove', captureMouseMoveFn);
+                })
+            }
         });
         self.curve && self.curve.remove();
+        let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });
+        console.log(_points);
         self.curve = self.svg.append('path')
-            .data([self.curveAnchors])
+            .data([_points])
             .attr('d', d3.line().curve(d3.curveBasis))
             .attr('stroke-width', 2)
             .attr('stroke', self.DEFAULTS.DefaultCurveColor)
@@ -160,10 +271,10 @@ class FlowBox {
         let _anchor;
         _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
         // MAKE SURE HORIZONTAL DIFF TO LAST ANCHOR IS AT LEAST 100
-        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < 100) {
-            let diffToCompare = self.lastAnchorAlignedLeft ? 220 : 130;
+        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < self.DEFAULTS.EventBoxWidth) {
+            let diffToCompare = self.lastAnchorAlignedLeft ? (self.DEFAULTS.EventBoxWidth * 2) + 20 : self.DEFAULTS.EventBoxWidth + 20;
             while (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare) {
-                self.lastAnchorAtLength = self.lastAnchorAtLength + 25;
+                self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
                 if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
                     self.extendPlanarCurve();
                     planarExtended = true;
@@ -190,16 +301,16 @@ class FlowBox {
             let top, left;
             let position = '';
             if (Math.abs(slope) < 1) {
-                let topOffset = self.DEFAULTS.ShowEventBoxes ? 145 : 130;
+                let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
                 let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
                 top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
                 position = slope < 0 ? 'top' : 'bottom';
-                if ((top + 120 > self.containerHeight) || (top < 0)) {
+                if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
                     top = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
                     position = slope < 0 ? 'bottom' : 'top';
                 }
                 // LEFT ADJUSTED BY HALF OF BOX WITH
-                left = (_anchor['x'] - 60);
+                left = (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
                 self.lastAnchorAlignedLeft = false;
             } else {
                 let leftOffset = self.DEFAULTS.ShowEventBoxes ? 30 : 15;
@@ -212,6 +323,8 @@ class FlowBox {
             _flowAnchor.eventBox = self.container.append('div');
             _flowAnchor.eventBox.node().classList.add('flow-box-event-container');
             _flowAnchor.eventBox.attr('id', GUID() + '_EVB');
+            _flowAnchor.eventBox.node().style.width = self.DEFAULTS.EventBoxWidth + 'px';
+            _flowAnchor.eventBox.node().style.height = self.DEFAULTS.EventBoxHeight + 'px';
             _flowAnchor.eventBox.node().style.top = top + 'px';
             _flowAnchor.eventBox.node().style.left = left + 'px';
             _flowAnchor.upperBox = _flowAnchor.eventBox.append('div');
@@ -242,8 +355,22 @@ class FlowBox {
             }
         }
     }
+    redraw() {
+        const self = this;
+        self.lastAnchorAtLength = null;
+        let _nodes = self.getNodes();
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            anchor.innerNode.remove();
+            anchor.outerNode.remove();
+            anchor.lowerBox.remove();
+            anchor.upperBox.remove();
+            anchor.eventBox.remove();
+        });
+        self.anchors = [];
+
+        self.initialize(_nodes);
+    }
     reset() {
-        console.log('reset');
         const self = this;
         self.lastAnchorAtLength = null;
         self.anchors.forEach((anchor: FlowAnchor) => {
@@ -254,11 +381,34 @@ class FlowBox {
             anchor.eventBox.remove();
         });
         self.anchors = [];
+        self.curveAnchors.forEach((anchor: CurveAnchor) => {
+            anchor.anchor.remove();
+        });
+        self.curveAnchors = [];
         self.initialize([]);
     }
     getNodes(): any[] {
         const self = this;
         return self.anchors.map((anchor: FlowAnchor) => { return anchor.data });
+    }
+    enableTouchEdit() {
+        const self = this;
+        // self.resetCurve();
+        // self.lastAnchorAtLength = null;
+        // self.lastCurveAnchor = null;
+        // self.anchors.forEach((anchor: FlowAnchor) => {
+        //     anchor.innerNode.remove();
+        //     anchor.outerNode.remove();
+        //     anchor.lowerBox.remove();
+        //     anchor.upperBox.remove();
+        //     anchor.eventBox.remove();
+        // });
+        // self.anchors = [];
+        // self.DEFAULTS.TouchEditMode = true;
+        // self.DEFAULTS.ShowCurveAnchors = true;
+        // self.curveAnchors = [];
+        // self.populateCurveAnchorBase();
+        // self.extendPlanarCurve();
     }
 }
 
