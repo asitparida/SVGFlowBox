@@ -165,7 +165,6 @@ class FlowBox {
     }
     extendPlanarCurve() {
         const self = this;
-        console.log(self.lastCurveAnchor);
         if (self.lastCurveAnchor == null) {
             self.lastCurveAnchor = [0, 0];
         }
@@ -233,8 +232,7 @@ class FlowBox {
             }
         });
         self.curve && self.curve.remove();
-        let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });
-        console.log(_points);
+        let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });        
         self.curve = self.svg.append('path')
             .data([_points])
             .attr('d', d3.line().curve(d3.curveBasis))
@@ -262,25 +260,22 @@ class FlowBox {
         let _totalPathLength = self.curve.node().getTotalLength();
         if (!self.lastAnchorAtLength) {
             self.lastAnchorAtLength = 0;
-            self.lastAnchor = { 'x': -50, 'y': 0 };
-            self.lastAnchorAtLength = self.lastAnchorAtLength + 100;
+            self.lastAnchor = { 'x': 0, 'y': 0 };
+            self.lastAnchorAtLength = self.lastAnchorAtLength + (self.DEFAULTS.EventBoxWidth / 2);
         } else {
             self.lastAnchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
             self.lastAnchorAtLength = self.lastAnchorAtLength + self.DEFAULTS.DefaultAnchorNodeSpacing;
         }
         let _anchor;
-        _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
-        // MAKE SURE HORIZONTAL DIFF TO LAST ANCHOR IS AT LEAST 100
-        if (Math.abs(_anchor['y'] - self.lastAnchor['y']) < self.DEFAULTS.EventBoxWidth) {
-            let diffToCompare = self.lastAnchorAlignedLeft ? (self.DEFAULTS.EventBoxWidth * 2) + 20 : self.DEFAULTS.EventBoxWidth + 20;
-            while (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare) {
-                self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
-                if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
-                    self.extendPlanarCurve();
-                    planarExtended = true;
-                }
-                _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+        _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);        
+        let diffToCompare = self.lastAnchorAlignedLeft ? (self.DEFAULTS.EventBoxWidth * 2) + 20 : self.DEFAULTS.EventBoxWidth + 20;
+        while ((_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2) < 0) || (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare)) {
+            self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
+            if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
+                self.extendPlanarCurve();
+                planarExtended = true;
             }
+            _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
         }
         if (_anchor) {
             _flowAnchor.anchor = _anchor;
@@ -300,25 +295,17 @@ class FlowBox {
             let slope = (_anchorNextForSlope['y'] - _anchor['y']) / (_anchorNextForSlope['x'] - _anchor['x']);
             let top, left;
             let position = '';
-            if (Math.abs(slope) < 1) {
-                let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
-                let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
-                top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
-                position = slope < 0 ? 'top' : 'bottom';
-                if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
-                    top = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
-                    position = slope < 0 ? 'bottom' : 'top';
-                }
-                // LEFT ADJUSTED BY HALF OF BOX WITH
-                left = (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
-                self.lastAnchorAlignedLeft = false;
-            } else {
-                let leftOffset = self.DEFAULTS.ShowEventBoxes ? 30 : 15;
-                top = (_anchor['y'] - 70);
-                left = (_anchor['x'] + leftOffset);
-                self.lastAnchorAlignedLeft = true;
-                position = 'right';
+            let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
+            let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
+            top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
+            position = slope < 0 ? 'top' : 'bottom';
+            if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
+                top = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
+                position = slope < 0 ? 'bottom' : 'top';
             }
+            // LEFT ADJUSTED BY HALF OF BOX WITH
+            left = (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
+            self.lastAnchorAlignedLeft = false;
             _flowAnchor.eventBoxPosition = position;
             _flowAnchor.eventBox = self.container.append('div');
             _flowAnchor.eventBox.node().classList.add('flow-box-event-container');

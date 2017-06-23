@@ -34,12 +34,12 @@ angular.module('SampleApp', [])
             defs.DefaultContainerHeightFraction = 1;
             defs.DefaultCurveColor = '#aae4ff';
             defs.ShowEventBoxes = true;
-            defs.EventBoxWidth = 240;
+            defs.EventBoxWidth = 200;
 
             let height =  document.getElementById(self.containerId).getBoundingClientRect().height;
             let heightDiffer = height / 5;
             defs.BaseAnchors = [];
-            defs.BaseAnchors.push([0, 100]);
+            defs.BaseAnchors.push([0, 0]);
             defs.BaseAnchors.push([100, - heightDiffer * 2]);
             defs.BaseAnchors.push([300, - heightDiffer * 2.25]);
             defs.BaseAnchors.push([50, heightDiffer * 1]);
@@ -63,7 +63,8 @@ function getNodes() {
             lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
-        },
+        }
+        ,
         {
             lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
