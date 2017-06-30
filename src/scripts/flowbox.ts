@@ -37,10 +37,12 @@ class FlowBoxNode {
     lower: string;
     upper: string;
     nodeColor: string;
-    constructor(lower = '', upper = '', color = FLOW_DEFAULTS.DefaultNodeColor) {
-        this.lower = lower;
-        this.upper = upper;
-        this.nodeColor = color;
+    nodeData: any;
+    constructor(data: any) {
+        this.nodeData = data;
+        this.lower = data['lower'];
+        this.upper = data['upper'];
+        this.nodeColor = data['nodeColor'];
     }
 }
 
@@ -90,8 +92,10 @@ class FlowBox {
     private captureMouseMove: any;
     private activeCurveAnchor: CurveAnchor;
     private baseAnchors: AnchorBase[];
-    constructor(defaults: any, _containerId: string, nodes: FlowBoxNode[]) {
+    private selectionCallBack: (data: any) => void;
+    constructor(defaults: any, _containerId: string, nodes: FlowBoxNode[], selectionCallBack?: (data: any) => void) {
         const self = this;
+        self.selectionCallBack = selectionCallBack;
         self.baseAnchors = [];
         self.DEFAULTS = defaults;
         self.container = d3.select(document.getElementById(_containerId));
@@ -134,7 +138,8 @@ class FlowBox {
     initNodes(nodes: FlowBoxNode[]) {
         const self = this;
         nodes.forEach((node: FlowBoxNode) => {
-            self.addAnchor(node, false);
+            let _node = new FlowBoxNode(node);
+            self.addAnchor(_node, false);
         });
     }
     getBaseAnchors(): any[] {
@@ -318,8 +323,20 @@ class FlowBox {
             _flowAnchor.upperBox.node().innerHTML = node.upper;
             _flowAnchor.lowerBox = _flowAnchor.eventBox.append('div');
             _flowAnchor.lowerBox.node().classList.add('flow-box-event-text');
-            _flowAnchor.lowerBox.node().innerHTML = node.lower;
-
+            _flowAnchor.lowerBox.node().
+            innerHTML = node.lower;
+            let _callback = (function(){
+                return function(e: MouseEvent){
+                    let _data = {
+                        eventBox: _flowAnchor.eventBox,
+                        node: (_flowAnchor.data as FlowBoxNode).nodeData
+                    }
+                    if (typeof self.selectionCallBack !== 'undefined' && typeof self.selectionCallBack === 'function') {
+                        self.selectionCallBack(_data);
+                    }
+                }
+            })();
+            _flowAnchor.eventBox.on('click', _callback);
             if (self.DEFAULTS.ShowEventBoxes) {
                 let arrowInBox: d3.Selection<any, any, null, undefined> = _flowAnchor.eventBox.append('div');
                 _flowAnchor.eventBox.attr('data-color', node.nodeColor);
@@ -376,7 +393,7 @@ class FlowBox {
     }
     getNodes(): any[] {
         const self = this;
-        return self.anchors.map((anchor: FlowAnchor) => { return anchor.data });
+        return self.anchors.map((anchor: FlowAnchor) => { return (anchor.data as FlowBoxNode).nodeData });
     }
     enableTouchEdit() {
         const self = this;

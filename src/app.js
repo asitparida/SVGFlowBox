@@ -6,11 +6,11 @@ angular.module('SampleApp', [])
         self.containerId = 'container1';
         let flowbox = {};
         self.addNode = function () {
-            let node = new FlowBoxNode(
-                '<p>Lorem ipsum dolor sit amet, consectetur </p>',
-                '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
-                colors[Math.floor(Math.random() * colors.length)]
-            );
+            let node = new FlowBoxNode({
+                lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+                upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+                nodeColor: colors[Math.floor(Math.random() * colors.length)]
+            });
             flowbox.addAnchor(node);
         }
         self.reset = function() {
@@ -27,6 +27,9 @@ angular.module('SampleApp', [])
         }
         self.downloadBaseAnchors = function(){
             console.log(flowbox.getBaseAnchors());
+        }
+        self.consoleLog = function(data) {
+            console.log(data);
         }
         self.init = function() {            
             let _containerElm = document.getElementById(self.containerId);
@@ -50,7 +53,7 @@ angular.module('SampleApp', [])
             defs.BaseAnchors.push([150, heightDiffer * 1.50]);
             defs.BaseAnchors.push([200, 0]);
             
-            flowbox = new FlowBox(defs, self.containerId, getNodes());
+            flowbox = new FlowBox(defs, self.containerId, getNodes(), self.consoleLog);
         }
         $timeout(function() {
             self.init();
@@ -62,7 +65,8 @@ function getNodes() {
         {
             lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
-            nodeColor: colors[Math.floor(Math.random() * colors.length)]
+            nodeColor: colors[Math.floor(Math.random() * colors.length)],
+            id: 1
         }
         ,
         {
