@@ -5,19 +5,21 @@
     <title></title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/4.1.0/css/fabric.min.css">
+    <link rel="stylesheet" href="lib/toastr.css">
     <script src="lib/d3.min.js"></script>
     <script src="lib/jquery.min.js"></script>
+    <script src="lib/toastr.min.js"></script>
     <script src="lib/angular.min.js"></script>
     <script src="dist/flowbox.js"></script>
     <script src="app.js"></script>
     <style>
-        #container{
+        #container {
             display: block;
             margin: 10vh auto;
             background: rgb(250, 250, 250);
         }
-        
-        .flow-box-container {            
+
+        .flow-box-container {
             box-sizing: border-box;
             overflow-y: hidden;
             overflow-x: auto;
@@ -31,7 +33,15 @@
             background: transparent;
             padding: 0;
             box-sizing: border-box;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            -webkit-user-select: none;
+            /* Chrome, Opera, Safari */
+            -moz-user-select: none;
+            /* Firefox 2+ */
+            -ms-user-select: none;
+            /* IE 10+ */
+            user-select: none;
+            /* Standard syntax */
         }
 
         .top-side-arrow {
@@ -59,7 +69,7 @@
             position: absolute;
             pointer-events: none;
             border-color: rgba(0, 0, 0, 0);
-            border-bottom-color:  #000;
+            border-bottom-color: #000;
             border-width: 7px;
             margin-left: -7px;
         }
@@ -96,9 +106,9 @@
             bottom: 0;
         }
 
-        .flow-box-event-text p{
+        .flow-box-event-text p {
             margin: 0;
-            padding:0;
+            padding: 0;
         }
 
         .btn {
@@ -107,21 +117,24 @@
             margin: 0 0 0 0;
             text-align: center;
             position: fixed;
-            top:0;
+            top: 0;
             left: 0;
         }
+
         body {
-            margin: 0;  
+            margin: 0;
         }
-        .flow-box-holder{
+
+        .flow-box-holder {
             float: right;
             margin: 0;
-            width: calc(100% - 60px);
-            height:80vh;
+            width: calc(100% - 48px);
+            height: 80vh;
             overflow-y: hidden;
             overflow-x: auto;
         }
-        .flow-box-holder-outer{
+
+        .flow-box-holder-outer {
             width: 80%;
             height: 80vh;
             display: block;
@@ -130,25 +143,33 @@
             overflow-x: auto;
             border: 1px dotted #0073C6;
         }
-        .flow-box-actions{
+
+        .flow-box-actions {
             height: 100%;
-            width: 60px;
+            width: 48px;
             float: left;
             background: #f1f9ff;
         }
-        .flow-box-actions-item{
-            height: 60px;
-            width:60px;
-            line-height: 60px;
+
+        .flow-box-actions-item {
+            height: 48px;
+            width: 48px;
+            line-height: 48px;
             text-align: center;
             font-size: large;
             cursor: pointer;
             color: #0073C6;
         }
-        .flow-box-actions-item:hover,
-        .flow-box-actions-item:focus,
-        .flow-box-actions-item:active{
-            color: #0073C6;
+
+        .flow-box-actions-item.active {
+            background: #000;
+            color: #fff;
+            
+        }
+
+        .flow-box-actions-item:not(.active):hover,
+        .flow-box-actions-item:not(.active)focus,
+        .flow-box-actions-item:not(.active)active {
             background: rgba(0, 0, 0, 0.05);
             outline: none;
         }
@@ -160,25 +181,34 @@
         <div class="flow-box-actions">
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.addNode()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--OneDriveAdd"></i>
-            </div>            
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.focusRandomNode()" title="Focus Random Anchor">
+                <i class="ms-Icon ms-Icon--Flow"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.changeRandomNodeData()" title="Change Random Anchor Data">
+                <i class="ms-Icon ms-Icon--EditNote"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.swapRandomNodes()" title="Swap Random Anchors">
+                <i class="ms-Icon ms-Icon--Switch"></i>
+            </div>
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.download()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Download"></i>
             </div>
-            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.redraw()" title="Add Anchor">
+            <!-- <div class="flow-box-actions-item" tabindex="0" ng-click="sample.redraw()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Refresh"></i>
-            </div>
-            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.touchEdit()" title="Add Anchor">
+            </div> -->
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.touchEdit()" title="Enable Touch Move" ng-class="{'active': sample.touchOnNavActive}">
                 <i class="ms-Icon ms-Icon--Touch"></i>
             </div>
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.reset()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Clear"></i>
             </div>
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.downloadBaseAnchors()" title="Download BaseAnchors">
-                <i class="ms-Icon ms-Icon--Download"></i>
-            </div>            
+                <i class="ms-Icon ms-Icon--Design"></i>
+            </div>
         </div>
         <div class="flow-box-holder" ng-attr-id="{{sample.containerId}}"></div>
-    </div>    
+    </div>
 </body>
 
 </html>
