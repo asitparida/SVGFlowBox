@@ -43,6 +43,9 @@ class FlowBoxNode {
         this.lower = data['lower'];
         this.upper = data['upper'];
         this.nodeColor = data['nodeColor'];
+        if (typeof this.nodeData.id === 'undefined') {
+            this.nodeData.id = GUID();
+        }
     }
 }
 
@@ -52,9 +55,11 @@ class FlowAnchor {
     innerNode: d3.Selection<any, any, null, undefined>;
     outerNode: d3.Selection<any, any, null, undefined>;
     eventBoxPosition: string;
+    eventBoxLeft: number;
     eventBox: d3.Selection<any, any, null, undefined>;
     upperBox: d3.Selection<any, any, null, undefined>;
     lowerBox: d3.Selection<any, any, null, undefined>;
+    arrowInBox: d3.Selection<any, any, null, undefined>;
 }
 
 class CurveAnchor {
@@ -237,7 +242,7 @@ class FlowBox {
             }
         });
         self.curve && self.curve.remove();
-        let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });        
+        let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });
         self.curve = self.svg.append('path')
             .data([_points])
             .attr('d', d3.line().curve(d3.curveBasis))
@@ -272,7 +277,7 @@ class FlowBox {
             self.lastAnchorAtLength = self.lastAnchorAtLength + self.DEFAULTS.DefaultAnchorNodeSpacing;
         }
         let _anchor;
-        _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);        
+        _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
         let diffToCompare = self.lastAnchorAlignedLeft ? (self.DEFAULTS.EventBoxWidth * 2) + 20 : self.DEFAULTS.EventBoxWidth + 20;
         while ((_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2) < 0) || (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare)) {
             self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
@@ -310,6 +315,7 @@ class FlowBox {
             }
             // LEFT ADJUSTED BY HALF OF BOX WITH
             left = (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
+            _flowAnchor.eventBoxLeft = left;
             self.lastAnchorAlignedLeft = false;
             _flowAnchor.eventBoxPosition = position;
             _flowAnchor.eventBox = self.container.append('div');
@@ -318,15 +324,14 @@ class FlowBox {
             _flowAnchor.eventBox.node().style.width = self.DEFAULTS.EventBoxWidth + 'px';
             _flowAnchor.eventBox.node().style.height = self.DEFAULTS.EventBoxHeight + 'px';
             _flowAnchor.eventBox.node().style.top = top + 'px';
-            _flowAnchor.eventBox.node().style.left = left + 'px';
+            _flowAnchor.eventBox.node().style.left = _flowAnchor.eventBoxLeft + 'px';
             _flowAnchor.upperBox = _flowAnchor.eventBox.append('div');
             _flowAnchor.upperBox.node().innerHTML = node.upper;
             _flowAnchor.lowerBox = _flowAnchor.eventBox.append('div');
             _flowAnchor.lowerBox.node().classList.add('flow-box-event-text');
-            _flowAnchor.lowerBox.node().
-            innerHTML = node.lower;
-            let _callback = (function(){
-                return function(e: MouseEvent){
+            _flowAnchor.lowerBox.node().innerHTML = node.lower;
+            let _callback = (function () {
+                return function (e: MouseEvent) {
                     let _data = {
                         eventBox: _flowAnchor.eventBox,
                         node: (_flowAnchor.data as FlowBoxNode).nodeData
@@ -349,6 +354,7 @@ class FlowBox {
                     arrowInBox.node().style.borderBottomColor = node.nodeColor;
                 else if (position === 'right')
                     arrowInBox.node().style.borderRightColor = node.nodeColor;
+                _flowAnchor.arrowInBox = arrowInBox;
                 _flowAnchor.lowerBox.node().style.background = node.nodeColor;
                 _flowAnchor.lowerBox.node().style.color = '#FFF';
             }
@@ -413,6 +419,65 @@ class FlowBox {
         // self.curveAnchors = [];
         // self.populateCurveAnchorBase();
         // self.extendPlanarCurve();
+    }
+    highlightNode(node: any) {
+        const self = this;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (anchor.data.nodeData.id === node.id) {
+                anchor.eventBox.node().style.outline = '2px dotted #000';
+                anchor.eventBox.node().style.outlineOffset = '5px';
+            } else {
+                anchor.eventBox.node().style.outline = 'none';
+            }
+        });
+    }
+    removeHighlight(node: any) {
+        const self = this;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (node) {
+                if (anchor.data.nodeData.id === node.id) {
+                    anchor.eventBox.node().style.outline = 'none';
+                }
+            } else {
+                anchor.eventBox.node().style.outline = 'none';
+            }
+        });
+    }
+    focusNode(node: any) {
+        const self = this;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (anchor.data.nodeData.id === node.id) {
+                let _scrollPos = anchor.eventBoxLeft - 150;
+                $(self.container.node()).animate({ scrollLeft: _scrollPos + 'px' }, 300);
+            }
+        });
+    }
+    changeData(node: any) {
+        const self = this;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (anchor.data.nodeData.id === node.id) {
+                anchor.data.nodeData = node;
+                anchor.data.nodeColor = node.nodeColor;
+                anchor.data.lower = node.lower;
+                anchor.data.upper = node.upper;
+                anchor.lowerBox.node().innerHTML = node.lower;
+                self.changeColors(anchor);
+            }
+        });
+    }
+    changeColors(anchor: FlowAnchor) {
+        anchor.innerNode.attr('fill', anchor.data.nodeColor);
+        anchor.outerNode.attr('stroke', anchor.data.nodeColor);
+        anchor.eventBox.attr('data-color', anchor.data.nodeColor);
+        anchor.eventBox.node().style.background = LightenDarkenColor(anchor.data.nodeColor, 120);
+        anchor.eventBox.node().style.borderColor = anchor.data.nodeColor;
+        if (anchor.eventBoxPosition === 'top')
+            anchor.arrowInBox.node().style.borderTopColor = anchor.data.nodeColor;
+        else if (anchor.eventBoxPosition === 'bottom')
+            anchor.arrowInBox.node().style.borderBottomColor = anchor.data.nodeColor;
+        else if (anchor.eventBoxPosition === 'right')
+            anchor.arrowInBox.node().style.borderRightColor = anchor.data.nodeColor;
+        anchor.lowerBox.node().style.background = anchor.data.nodeColor;
     }
 }
 
