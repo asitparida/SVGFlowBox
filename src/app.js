@@ -1,5 +1,21 @@
 let colors = ['#0073C6', '#2ecc71', '#3498db', '#9b59b6', '#f39c12', '#d35400', '#e74c3c', '#34495e'];
-
+toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": false,
+    "progressBar": false,
+    "positionClass": "toast-bottom-center",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+}
 angular.module('SampleApp', [])
     .controller('SampleAppController', ['$timeout', function ($timeout) {
         const self = this;
@@ -55,6 +71,30 @@ angular.module('SampleApp', [])
                 }, 2000);
             }, 1000);
         }
+        self.swapRandomNodes = function () {
+            var nodes = flowbox.getNodes();
+            var randomFirstNodeIndex = Math.floor(Math.random() * nodes.length);
+            var randomSecondNodeIndex = Math.floor(Math.random() * nodes.length);
+            if (randomFirstNodeIndex !== randomSecondNodeIndex) {
+                var firstNode = nodes[randomFirstNodeIndex];
+                var secondNode = nodes[randomSecondNodeIndex];
+                toastr.clear();
+                toastr.info('Swapping nodes ' + (randomFirstNodeIndex + 1) + ' with ' + (randomSecondNodeIndex + 1));
+                flowbox.highlightNode(firstNode);
+                flowbox.focusNode(firstNode);
+                setTimeout(() => {
+                    flowbox.highlightNode(secondNode);
+                    flowbox.focusNode(secondNode);
+                    setTimeout(() => {
+                        flowbox.swapNodes(firstNode, secondNode);
+                        setTimeout(() => {
+                            flowbox.highlightNode(firstNode);
+                            flowbox.focusNode(firstNode);
+                        }, 1000);
+                    }, 2000);
+                }, 2000);
+            }
+        }
         self.init = function () {
             let _containerElm = document.getElementById(self.containerId);
             let defs = Object.create(FLOW_DEFAULTS);
@@ -87,39 +127,39 @@ angular.module('SampleApp', [])
 function getNodes() {
     return [
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>1Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
             id: 1
         }
         ,
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>2Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         },
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>3Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         },
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>4Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         },
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>5Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         },
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>6Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         },
         {
-            lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
+            lower: '<p>7Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)]
         }

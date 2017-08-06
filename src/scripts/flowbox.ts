@@ -1,6 +1,10 @@
 ﻿/// <reference path="../node_modules/@types/d3/index.d.ts" />
 /// <reference path="../node_modules/@types/jquery/index.d.ts" />
 
+declare interface ObjectConstructor {
+    assign(...objects: Object[]): Object;
+}
+
 interface IflowDefaults {
     DefaultAnchorNodeSpacing: number,
     DefaultCurveColor: string,
@@ -479,6 +483,29 @@ class FlowBox {
             anchor.arrowInBox.node().style.borderRightColor = anchor.data.nodeColor;
         anchor.lowerBox.node().style.background = anchor.data.nodeColor;
     }
+    swapNodes(firsNode: any, secondNode: any) {
+        const self = this;
+        let tnode = null;
+        let snode = null;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (anchor.data.nodeData.id === firsNode.id) {
+                var node: any = Object.assign({}, anchor.data.nodeData);
+                node.lower = secondNode.lower;
+                node.upper = secondNode.upper;
+                node.nodeColor = secondNode.nodeColor;
+                tnode = node;
+            }
+            else if (anchor.data.nodeData.id === secondNode.id) {
+                var node: any = Object.assign({}, anchor.data.nodeData);
+                node.lower = firsNode.lower;
+                node.upper = firsNode.upper;
+                node.nodeColor = firsNode.nodeColor;
+                snode = node;
+            }
+        });
+        if (tnode) self.changeData(tnode);
+        if (snode) self.changeData(snode);
+    };
 }
 
 function LightenDarkenColor(col: any, amt: any) {

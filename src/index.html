@@ -5,8 +5,10 @@
     <title></title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/4.1.0/css/fabric.min.css">
+    <link rel="stylesheet" href="lib/toastr.css">
     <script src="lib/d3.min.js"></script>
     <script src="lib/jquery.min.js"></script>
+    <script src="lib/toastr.min.js"></script>
     <script src="lib/angular.min.js"></script>
     <script src="dist/flowbox.js"></script>
     <script src="app.js"></script>
@@ -166,6 +168,9 @@
             </div>
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.changeRandomNodeData()" title="Change Random Anchor Data">
                 <i class="ms-Icon ms-Icon--EditNote"></i>
+            </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.swapRandomNodes()" title="Swap Random Anchors">
+                <i class="ms-Icon ms-Icon--Switch"></i>
             </div>            
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.download()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Download"></i>
