@@ -540,6 +540,7 @@ class FlowBox {
                 anchor.data.lower = node.lower;
                 anchor.data.upper = node.upper;
                 anchor.lowerBox.node().innerHTML = node.lower;
+                anchor.upperBox.node().innerHTML = node.upper;
                 self.changeColors(anchor);
             }
         });
