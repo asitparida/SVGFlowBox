@@ -582,6 +582,26 @@ class FlowBox {
         if (tnode) self.changeData(tnode);
         if (snode) self.changeData(snode);
     };
+    deleteNode(node: any) {
+        const self = this;
+        let target: FlowAnchor = null;
+        self.anchors.forEach((anchor: FlowAnchor) => {
+            if (anchor.data.nodeData.id === node.id) {
+                target = anchor;
+            }
+        });
+        if (target) {
+            self.anchors = self.anchors.filter((anchor: FlowAnchor) => {
+                return anchor.data.nodeData.id === target.data.nodeData.id;
+            });
+            target.innerNode.remove();
+            target.outerNode.remove();
+            target.lowerBox.remove();
+            target.upperBox.remove();
+            target.eventBox.remove();
+            target.arrowInBox.remove();
+        }
+    }
 }
 
 function LightenDarkenColor(col: any, amt: any) {

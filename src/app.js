@@ -52,6 +52,9 @@ angular.module('SampleApp', [])
             flowbox.highlightNode(data.node);
             setTimeout(() => {
                 flowbox.removeHighlight();
+                setTimeout(() => {
+                    flowbox.deleteNode(data.node);
+                }, 500);
             }, 2000);
         }
         self.focusRandomNode = function () {
