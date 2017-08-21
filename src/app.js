@@ -17,11 +17,12 @@ toastr.options = {
     "hideMethod": "fadeOut"
 }
 angular.module('SampleApp', [])
-    .controller('SampleAppController', ['$timeout', function ($timeout) {
+    .controller('SampleAppController', ['$timeout', '$scope', function ($timeout, $scope) {
         const self = this;
         self.containerId = 'container1';
         let flowbox = {};
         self.touchOnNavActive = false;
+        self.currentNode = null;
         self.addNode = function () {
             let node = new FlowBoxNode({
                 lower: '<p>Lorem ipsum dolor sit amet, consectetur </p>',
@@ -49,13 +50,21 @@ angular.module('SampleApp', [])
         }
         self.consoleLog = function (data) {
             console.log(data);
-            flowbox.highlightNode(data.node);
-            setTimeout(() => {
-                flowbox.removeHighlight();
-                setTimeout(() => {
-                    flowbox.deleteNode(data.node);
-                }, 500);
-            }, 2000);
+            $scope.$apply(() => {
+                if (!self.currentNode) {
+                    self.currentNode = data.node;
+                    flowbox.highlightNode(data.node);
+                } else {
+                    flowbox.removeHighlight();
+                    self.currentNode = null;
+                }
+            });
+        }
+        self.deleteNode = function () {
+            if (self.currentNode) {
+                flowbox.deleteNode(self.currentNode);
+                self.currentNode = null;
+            }
         }
         self.focusRandomNode = function () {
             var nodes = flowbox.getNodes();
@@ -136,7 +145,6 @@ function getNodes() {
             lower: '<p>1Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            id: 1,
             diff: 200
         }
         ,

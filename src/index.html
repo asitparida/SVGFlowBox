@@ -194,6 +194,9 @@
             <div class="flow-box-actions-item" tabindex="0" ng-click="sample.download()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Download"></i>
             </div>
+            <div class="flow-box-actions-item" tabindex="0" ng-click="sample.deleteNode()" title="Delete Anchor" ng-if="sample.currentNode !== null">
+                <i class="ms-Icon ms-Icon--Delete"></i>
+            </div>
             <!-- <div class="flow-box-actions-item" tabindex="0" ng-click="sample.redraw()" title="Add Anchor">
                 <i class="ms-Icon ms-Icon--Refresh"></i>
             </div> -->
