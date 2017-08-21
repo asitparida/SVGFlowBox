@@ -582,6 +582,40 @@ class FlowBox {
         if (tnode) self.changeData(tnode);
         if (snode) self.changeData(snode);
     };
+    deleteNode(node: any) {
+        const self = this;
+        let targetAnchor: FlowAnchor = null;
+        let targetIndex: number = null;
+        let restNodes: any[] = [];
+        self.anchors.forEach((anchor: FlowAnchor, index: number) => {
+            if (anchor.data.nodeData.id === node.id) {
+                targetIndex = index;
+            }
+        });
+        if (targetIndex >= 0) {
+            targetAnchor = self.anchors[targetIndex - 1];
+            self.anchors.forEach((anchor: FlowAnchor, index: number) => {
+                if (index >= targetIndex) {
+                    anchor.innerNode.remove();
+                    anchor.outerNode.remove();
+                    anchor.lowerBox.remove();
+                    anchor.upperBox.remove();
+                    anchor.eventBox.remove();
+                    anchor.arrowInBox.remove();
+                }
+                if (index > targetIndex) {
+                    restNodes.push(anchor.data);
+                }
+            });
+            self.anchors = self.anchors.filter((anchor: FlowAnchor, index: number) => {
+                return index < targetIndex;
+            });
+            self.lastAnchorAtLength = targetAnchor ? targetAnchor.anchorDistance : 0; 
+            restNodes.forEach((nd: any) => {
+                self.addAnchor(nd, false);
+            });
+        }
+    }
 }
 
 function LightenDarkenColor(col: any, amt: any) {
