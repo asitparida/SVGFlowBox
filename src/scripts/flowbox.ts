@@ -186,16 +186,25 @@ class FlowBox {
         if (self.DEFAULTS.BaseAnchors && self.DEFAULTS.BaseAnchors.length > 0) {
             self.DEFAULTS.BaseAnchors.push();
         } else {
-            self.DEFAULTS.BaseAnchors.push([0, 100]);
-            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1]);
-            self.DEFAULTS.BaseAnchors.push([300, - heightDiffer * 2]);
-            self.DEFAULTS.BaseAnchors.push([50, heightDiffer * 1.5]);
-            self.DEFAULTS.BaseAnchors.push([200, heightDiffer * 1.70]);
-            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1.5]);
-            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer * 1.70]);
-            self.DEFAULTS.BaseAnchors.push([50, heightDiffer * 1]);
-            self.DEFAULTS.BaseAnchors.push([150, heightDiffer * 1.50]);
-            self.DEFAULTS.BaseAnchors.push([200, 0]);
+            self.DEFAULTS.BaseAnchors.push([0, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, - heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
+            self.DEFAULTS.BaseAnchors.push([100, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([200, + heightDiffer]);
+            self.DEFAULTS.BaseAnchors.push([100, 0]);
         }
         self.DEFAULTS.BaseAnchors.forEach((_anc) => {
             self.baseAnchors.push(new AnchorBase(_anc[0], _anc[1]));
@@ -238,7 +247,7 @@ class FlowBox {
         let _points = self.curveAnchors.map((c: CurveAnchor) => { return c.data });
         self.curve = self.svg.append('path')
             .data([_points])
-            .attr('d', d3.line().curve(d3.curveBasis))
+            .attr('d', d3.line().curve(d3.curveNatural))
             .attr('stroke-width', 2)
             .attr('stroke', self.DEFAULTS.DefaultCurveColor)
             .attr('stroke-dasharray', self.DEFAULTS.DefaultCurveIsSolid === true ? '0, 0' : self.DEFAULTS.DefaultCuveStrokeDasharray)
