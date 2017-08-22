@@ -115,22 +115,33 @@ angular.module('SampleApp', [])
             let defs = Object.create(FLOW_DEFAULTS);
             defs.DefaultContainerHeightFraction = 1;
             defs.DefaultCurveColor = '#aae4ff';
+            defs.ShowCurveAnchors = false;
             defs.ShowEventBoxes = true;
             defs.EventBoxWidth = 200;
 
             let height = document.getElementById(self.containerId).getBoundingClientRect().height;
-            let heightDiffer = height / 5;
+            let heightDiffer = height / 2.5;
             defs.BaseAnchors = [];
+            
             defs.BaseAnchors.push([0, 0]);
-            defs.BaseAnchors.push([100, - heightDiffer * 2]);
-            defs.BaseAnchors.push([300, - heightDiffer * 2.25]);
-            defs.BaseAnchors.push([50, heightDiffer * 1]);
-            defs.BaseAnchors.push([200, heightDiffer * 1.70]);
-            defs.BaseAnchors.push([200, - heightDiffer * 1.5]);
-            defs.BaseAnchors.push([200, - heightDiffer * 1.70]);
-            defs.BaseAnchors.push([50, heightDiffer * 1]);
-            defs.BaseAnchors.push([150, heightDiffer * 1.50]);
-            defs.BaseAnchors.push([200, 0]);
+            defs.BaseAnchors.push([100, - heightDiffer]);
+            defs.BaseAnchors.push([200, - heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
+            defs.BaseAnchors.push([100, + heightDiffer]);
+            defs.BaseAnchors.push([200, + heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
+            defs.BaseAnchors.push([100, - heightDiffer]);
+            defs.BaseAnchors.push([200, - heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
+            defs.BaseAnchors.push([100, + heightDiffer]);
+            defs.BaseAnchors.push([200, + heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
+            defs.BaseAnchors.push([100, - heightDiffer]);
+            defs.BaseAnchors.push([200, - heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
+            defs.BaseAnchors.push([100, + heightDiffer]);
+            defs.BaseAnchors.push([200, + heightDiffer]);
+            defs.BaseAnchors.push([100, 0]);
 
             flowbox = new FlowBox(defs, self.containerId, getNodes(), self.consoleLog);
         }
