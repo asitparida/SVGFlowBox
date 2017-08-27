@@ -143,7 +143,7 @@ angular.module('SampleApp', [])
             defs.BaseAnchors.push([200, + heightDiffer]);
             defs.BaseAnchors.push([100, 0]);
 
-            flowbox = new FlowBox(defs, self.containerId, getNodes(), self.consoleLog);
+            flowbox = new FlowBox(defs, self.containerId, getNodes(), self.consoleLog, true);
         }
         $timeout(function () {
             self.init();
@@ -151,55 +151,114 @@ angular.module('SampleApp', [])
     }])
 
 function getNodes() {
+    // return [
+    //     {
+    //         lower: '<p>1Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 112,
+    //     }
+    //     ,
+    //     {
+    //         lower: '<p>2Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 240
+    //     },
+    //     {
+    //         lower: '<p>3Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 240
+    //     },
+    //     {
+    //         lower: '<p>4Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 280
+    //     },
+    //     {
+    //         lower: '<p>5Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 240
+    //     },
+    //     {
+    //         lower: '<p>6Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 280
+    //     },
+    //     {
+    //         lower: '<p>7Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 240
+    //     },
+    //     {
+    //         lower: '<p>8Lorem ipsum dolor sit amet, consectetur </p>',
+    //         upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
+    //         nodeColor: colors[Math.floor(Math.random() * colors.length)],
+    //         diff: 240
+    //     }
+    // ];
     return [
         {
             lower: '<p>1Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 350
+            diff: 284,
+            eventBoxPosition: 'bottom'
         }
         ,
         {
             lower: '<p>2Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 240
+            diff: 314,
+            eventBoxPosition: 'top'
         },
         {
             lower: '<p>3Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 240
+            diff: 177,
+            eventBoxPosition: 'top'
         },
         {
             lower: '<p>4Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 280
+            diff: 35,
+            eventBoxPosition: 'bottom'
         },
         {
             lower: '<p>5Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 240
+           diff: 346,
+            eventBoxPosition: 'top'
         },
         {
             lower: '<p>6Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 280
+            diff: 377,
+            eventBoxPosition: 'bottom'
         },
         {
             lower: '<p>7Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 240
+            diff: 35,
+            eventBoxPosition: 'top'
         },
         {
             lower: '<p>8Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 240
+            diff: 349,
+            eventBoxPosition: 'bottom'
         }
     ];
 }

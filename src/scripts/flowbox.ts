@@ -325,7 +325,6 @@ class FlowBox {
             let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
             let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
             if (node.eventBoxPosition === null) {
-                console.log(node.eventBoxPosition);
                 top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
                 position = slope < 0 ? 'top' : 'bottom';
                 if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
@@ -542,9 +541,9 @@ class FlowBox {
         const self = this;
         let lastDiff = 0;
         self.anchors.forEach((anchor: FlowAnchor) => {
-            (anchor.data as FlowBoxNode).nodeData.diff = anchor.anchor['x'] - lastDiff;
+            (anchor.data as FlowBoxNode).nodeData.diff = anchor.anchorDistance - lastDiff;
             (anchor.data as FlowBoxNode).nodeData.eventBoxPosition = anchor.eventBoxPosition;
-            lastDiff = anchor.anchor['x'];
+            lastDiff = anchor.anchorDistance;
         });
         return self.anchors.map((anchor: FlowAnchor) => {
             return (anchor.data as FlowBoxNode).nodeData
