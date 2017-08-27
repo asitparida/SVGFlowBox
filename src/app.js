@@ -156,7 +156,7 @@ function getNodes() {
             lower: '<p>1Lorem ipsum dolor sit amet, consectetur </p>',
             upper: '<img class="flow-box-event-img" src="icons-roller-coaster.png" />',
             nodeColor: colors[Math.floor(Math.random() * colors.length)],
-            diff: 200
+            diff: 350
         }
         ,
         {

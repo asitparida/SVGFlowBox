@@ -57,10 +57,12 @@ const FLOW_DEFAULTS: IflowDefaults = {
 class FlowBoxNode {
     lower: string;
     upper: string;
+    eventBoxPosition: string = null;
     nodeColor: string;
     nodeData: any;
     constructor(data: any) {
         this.nodeData = data;
+        this.eventBoxPosition = data['eventBoxPosition'] || null;
         this.lower = data['lower'];
         this.upper = data['upper'];
         this.nodeColor = data['nodeColor'];
@@ -322,11 +324,22 @@ class FlowBox {
             let position = '';
             let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
             let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
-            top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
-            position = slope < 0 ? 'top' : 'bottom';
-            if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
-                top = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
-                position = slope < 0 ? 'bottom' : 'top';
+            if (node.eventBoxPosition === null) {
+                console.log(node.eventBoxPosition);
+                top = (slope < 0 ? _anchor['y'] - topOffset : _anchor['y'] + bottomOffset);
+                position = slope < 0 ? 'top' : 'bottom';
+                if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
+                    top = (slope < 0 ? _anchor['y'] + bottomOffset : _anchor['y'] - topOffset);
+                    position = slope < 0 ? 'bottom' : 'top';
+                }
+            } else {
+                if (node.eventBoxPosition === 'bottom') {
+                    top = _anchor['y'] + bottomOffset;
+                    position = 'bottom';
+                } else {
+                    top = _anchor['y'] - topOffset;
+                    position = 'top';
+                }
             }
             // LEFT ADJUSTED BY HALF OF BOX WITH
             left = (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
@@ -385,19 +398,33 @@ class FlowBox {
                 let _scrollPos = left - 150;
                 $(self.container.node()).animate({ scrollLeft: _scrollPos + 'px' }, 300);
             }
-            _flowAnchor.eventBox.on('keyup', () => {
+
+            const onKeyUp = function () {
                 if (self.editingBoxPositionInTouchMode && self.activeFlowAnchor.data.nodeData.id === _flowAnchor.data.nodeData.id) {
-                    if ((d3.event as KeyboardEvent).keyCode == 39 || (d3.event as KeyboardEvent).keyCode == 40) {
-                        self.moveActiveNode(self.DEFAULTS.EditBaseDistanceChange);
-                    } else if ((d3.event as KeyboardEvent).keyCode == 37 || (d3.event as KeyboardEvent).keyCode == 38) {
-                        self.moveActiveNode(-self.DEFAULTS.EditBaseDistanceChange);
+                    let distance = self.DEFAULTS.EditBaseDistanceChange;
+                    if ((d3.event as KeyboardEvent).ctrlKey) {
+                        distance = 3 * distance;
+                    }
+                    if ((d3.event as KeyboardEvent).keyCode == 39) {
+                        self.moveActiveNode(distance);
+                    } else if ((d3.event as KeyboardEvent).keyCode == 37) {
+                        self.moveActiveNode(-distance);
+                    } else if ((d3.event as KeyboardEvent).keyCode == 38) {
+                        self.adjustEventBoxPosition('top');
+                    } else if ((d3.event as KeyboardEvent).keyCode == 40) {
+                        self.adjustEventBoxPosition('bottom');
                     }
                     d3.event.stopPropagation();
                     d3.event.preventDefault();
                     return false;
                 }
-            })
-            _flowAnchor.eventBox.on('keydown', () => {
+            }
+
+            _flowAnchor.eventBox.on('keyup', () => {
+                onKeyUp();
+            });
+
+            const onKeyDown = function () {
                 let prevent: Boolean = false;
                 if (self.editingBoxPositionInTouchMode && self.activeFlowAnchor.data.nodeData.id === _flowAnchor.data.nodeData.id) {
                     if ((d3.event as KeyboardEvent).keyCode == 39) {
@@ -411,8 +438,59 @@ class FlowBox {
                     d3.event.preventDefault();
                     return false;
                 }
+            }
+
+            _flowAnchor.eventBox.on('keydown', () => {
+                onKeyDown();
             })
         }
+    }
+    adjustEventBoxPosition(eventBoxPosition: string = null) {
+        const self = this;
+        const newAnchor = self.activeFlowAnchor.anchor;
+        let _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
+        let slope = (_anchorNextForSlope['y'] - newAnchor['y']) / (_anchorNextForSlope['x'] - newAnchor['x']);
+        let top, left;
+        let position = '';
+        let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
+        let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
+        if (eventBoxPosition === null) {
+            top = (slope < 0 ? newAnchor['y'] - topOffset : newAnchor['y'] + bottomOffset);
+            position = slope < 0 ? 'top' : 'bottom';
+            if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
+                top = (slope < 0 ? newAnchor['y'] + bottomOffset : newAnchor['y'] - topOffset);
+                position = slope < 0 ? 'bottom' : 'top';
+            }
+        } else {
+            if (eventBoxPosition === 'bottom') {
+                top = newAnchor['y'] + bottomOffset;
+                position = 'bottom';
+            } else {
+                top = newAnchor['y'] - topOffset;
+                position = 'top';
+            }
+        }
+        // LEFT ADJUSTED BY HALF OF BOX WITH
+        left = (newAnchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
+        self.activeFlowAnchor.eventBoxLeft = left;
+        self.lastAnchorAlignedLeft = false;
+        self.activeFlowAnchor.data.eventBoxPosition = position;
+        self.activeFlowAnchor.data.nodeData.eventBoxPosition = position;
+        self.activeFlowAnchor.eventBoxPosition = position;
+        self.activeFlowAnchor.eventBox.node().style.top = top + 'px';
+        self.activeFlowAnchor.eventBox.node().style.left = self.activeFlowAnchor.eventBoxLeft + 'px';
+        self.activeFlowAnchor.arrowInBox.node().classList.remove('top-side-arrow');
+        self.activeFlowAnchor.arrowInBox.node().classList.remove('bottom-side-arrow');
+        self.activeFlowAnchor.arrowInBox.node().classList.add(position + '-side-arrow');
+        self.activeFlowAnchor.arrowInBox.node().style.borderTopColor = 'transparent';
+        self.activeFlowAnchor.arrowInBox.node().style.borderBottomColor = 'transparent';
+        self.activeFlowAnchor.arrowInBox.node().style.borderRightColor = 'transparent';
+        if (position === 'top')
+            self.activeFlowAnchor.arrowInBox.node().style.borderTopColor = self.activeFlowAnchor.data.nodeData.nodeColor;
+        else if (position === 'bottom')
+            self.activeFlowAnchor.arrowInBox.node().style.borderBottomColor = self.activeFlowAnchor.data.nodeData.nodeColor;
+        else if (position === 'right')
+            self.activeFlowAnchor.arrowInBox.node().style.borderRightColor = self.activeFlowAnchor.data.nodeData.nodeColor;
     }
     moveActiveNode(distance: number) {
         const self = this;
@@ -426,35 +504,7 @@ class FlowBox {
         self.activeFlowAnchor.outerNode.attr('cy', y);
         self.activeFlowAnchor.anchor = newAnchor;
         self.activeFlowAnchor.anchorDistance = anchorDistance;
-        let _anchorNextForSlope = self.curve.node().getPointAtLength(self.lastAnchorAtLength + 1);
-        let slope = (_anchorNextForSlope['y'] - newAnchor['y']) / (_anchorNextForSlope['x'] - newAnchor['x']);
-        let top, left;
-        let position = '';
-        let topOffset = self.DEFAULTS.ShowEventBoxes ? self.DEFAULTS.EventBoxHeight + 25 : self.DEFAULTS.EventBoxHeight + 10;
-        let bottomOffset = self.DEFAULTS.ShowEventBoxes ? 25 : 10;
-        top = (slope < 0 ? newAnchor['y'] - topOffset : newAnchor['y'] + bottomOffset);
-        position = slope < 0 ? 'top' : 'bottom';
-        if ((top + self.DEFAULTS.EventBoxHeight > self.containerHeight) || (top < 0)) {
-            top = (slope < 0 ? newAnchor['y'] + bottomOffset : newAnchor['y'] - topOffset);
-            position = slope < 0 ? 'bottom' : 'top';
-        }
-        // LEFT ADJUSTED BY HALF OF BOX WITH
-        left = (newAnchor['x'] - (self.DEFAULTS.EventBoxWidth / 2));
-        self.activeFlowAnchor.eventBoxLeft = left;
-        self.lastAnchorAlignedLeft = false;
-        self.activeFlowAnchor.eventBoxPosition = position;
-        self.activeFlowAnchor.eventBox.node().style.top = top + 'px';
-        self.activeFlowAnchor.eventBox.node().style.left = self.activeFlowAnchor.eventBoxLeft + 'px';
-        self.activeFlowAnchor.arrowInBox.node().classList.add(position + '-side-arrow');
-        self.activeFlowAnchor.arrowInBox.node().style.borderTopColor = 'transparent';
-        self.activeFlowAnchor.arrowInBox.node().style.borderBottomColor = 'transparent';
-        self.activeFlowAnchor.arrowInBox.node().style.borderRightColor = 'transparent';
-        if (position === 'top')
-            self.activeFlowAnchor.arrowInBox.node().style.borderTopColor = self.activeFlowAnchor.data.nodeData.nodeColor;
-        else if (position === 'bottom')
-            self.activeFlowAnchor.arrowInBox.node().style.borderBottomColor = self.activeFlowAnchor.data.nodeData.nodeColor;
-        else if (position === 'right')
-            self.activeFlowAnchor.arrowInBox.node().style.borderRightColor = self.activeFlowAnchor.data.nodeData.nodeColor;
+        self.adjustEventBoxPosition();
     }
     redraw() {
         const self = this;
@@ -493,6 +543,7 @@ class FlowBox {
         let lastDiff = 0;
         self.anchors.forEach((anchor: FlowAnchor) => {
             (anchor.data as FlowBoxNode).nodeData.diff = anchor.anchor['x'] - lastDiff;
+            (anchor.data as FlowBoxNode).nodeData.eventBoxPosition = anchor.eventBoxPosition;
             lastDiff = anchor.anchor['x'];
         });
         return self.anchors.map((anchor: FlowAnchor) => {
@@ -548,6 +599,9 @@ class FlowBox {
                 anchor.data.nodeColor = node.nodeColor;
                 anchor.data.lower = node.lower;
                 anchor.data.upper = node.upper;
+                anchor.data.eventBoxPosition = node.eventBoxPosition;
+                self.activeFlowAnchor = anchor;
+                self.adjustEventBoxPosition(anchor.data.eventBoxPosition);
                 anchor.lowerBox.node().innerHTML = node.lower;
                 anchor.upperBox.node().innerHTML = node.upper;
                 self.changeColors(anchor);
@@ -578,6 +632,7 @@ class FlowBox {
                 node.lower = secondNode.lower;
                 node.upper = secondNode.upper;
                 node.nodeColor = secondNode.nodeColor;
+                node.eventBoxPosition = secondNode.eventBoxPosition;
                 tnode = node;
             }
             else if (anchor.data.nodeData.id === secondNode.id) {
@@ -585,6 +640,7 @@ class FlowBox {
                 node.lower = firsNode.lower;
                 node.upper = firsNode.upper;
                 node.nodeColor = firsNode.nodeColor;
+                node.eventBoxPosition = firsNode.eventBoxPosition;
                 snode = node;
             }
         });
@@ -619,7 +675,7 @@ class FlowBox {
             self.anchors = self.anchors.filter((anchor: FlowAnchor, index: number) => {
                 return index < targetIndex;
             });
-            self.lastAnchorAtLength = targetAnchor ? targetAnchor.anchorDistance : 0; 
+            self.lastAnchorAtLength = targetAnchor ? targetAnchor.anchorDistance : 0;
             restNodes.forEach((nd: any) => {
                 self.addAnchor(nd, false);
             });
