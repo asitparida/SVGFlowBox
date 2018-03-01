@@ -138,6 +138,7 @@ class FlowBox {
     private svg: d3.Selection<any, any, null, undefined>;
     private containerWidth: number;
     private containerHeight: number;
+    private containerBottom: number;
     private planarY: number;
     private planarMidPath: d3.Selection<any, any, null, undefined>;
     private curve: d3.Selection<any, any, null, undefined>;
@@ -165,14 +166,15 @@ class FlowBox {
         self.DEFAULTS = defaults;
         self.container = d3.select(document.getElementById(_containerId));
         self.container.node().classList.add('flow-box-container');
-        let _width = (self.container.node().getBoundingClientRect() as ClientRect).width;
+        const props = (self.container.node().getBoundingClientRect() as ClientRect); 
+        let _width = props.width;
         self.containerWidth = _width;
         let _height = window.innerHeight;
         if (self.DEFAULTS.DefaultContainerHeightFraction !== 1) {
             self.containerHeight = _height * self.DEFAULTS.DefaultContainerHeightFraction;
             self.container.node().style.height = self.containerHeight + 'px';
         } else {
-            self.containerHeight = self.container.node().getBoundingClientRect().height;
+            self.containerHeight = props.height;
         }
         self.planarY = self.containerHeight * 0.50;
         setTimeout(() => {
@@ -314,7 +316,13 @@ class FlowBox {
             }
             _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
             let diffToCompare = self.lastAnchorAlignedLeft ? (self.DEFAULTS.EventBoxWidth * 2) + 20 : self.DEFAULTS.EventBoxWidth + 20;
-            while ((_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2) < 0) || (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare)) {
+            const eventBoxWidthHalved = self.DEFAULTS.EventBoxWidth / 2;
+            while (
+                (_anchor['x'] - (self.DEFAULTS.EventBoxWidth / 2) < 0)
+                || (_anchor['x'] - self.lastAnchor['x'] <= diffToCompare)
+                || (_anchor['x'] - eventBoxWidthHalved < 0)
+            ) {
+                console.log(_anchor['x'] - eventBoxWidthHalved);
                 self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
                 if (!planarExtended && (self.lastAnchorAtLength > _totalPathLength)) {
                     self.extendPlanarCurve();
@@ -328,6 +336,24 @@ class FlowBox {
             }
             self.lastAnchorAtLength = self.lastAnchorAtLength + node.nodeData.diff;
             _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+            const eventBoxWidthHalved = self.DEFAULTS.EventBoxWidth / 2;
+            const eventBoxHeight = self.DEFAULTS.EventBoxHeight;
+            while(_anchor['x'] - eventBoxWidthHalved < 0) {
+                self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
+                _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+            }
+            if (node.eventBoxPosition === 'top') {
+                while(_anchor['y'] - eventBoxHeight < 17) {
+                    self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
+                    _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+                }
+            }
+            if (node.eventBoxPosition === 'bottom') {
+                while(_anchor['y'] + eventBoxHeight + 35 > self.containerHeight) {
+                    self.lastAnchorAtLength = self.lastAnchorAtLength + 10;
+                    _anchor = self.curve.node().getPointAtLength(self.lastAnchorAtLength);
+                }
+            }
             if (!planarExtended && ((self.lastAnchorAtLength > _totalPathLength) || ((self.lastAnchorAtLength + (self.DEFAULTS.EventBoxWidth / 2) + 50) > _totalPathLength))) {
                 self.extendPlanarCurve();
                 planarExtended = true;
